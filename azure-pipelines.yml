@@ -1,0 +1,61 @@
+# Starter pipeline
+# https://aka.ms/yaml
+
+trigger:
+  branches:
+    include:
+      - release/*
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  buildConfiguration: 'Release'
+
+steps:
+- task: UseDotNet@2
+  displayName: Installa .Net
+  inputs:
+    packageType: 'sdk'
+    version: '10.x'
+
+- task: DotNetCoreCLI@2
+  displayName: Installa dipendenze
+  inputs:
+    command: 'restore'
+    projects: 'GreenMobility-be.slnx'
+    feedsToUse: 'select'
+
+- task: DotNetCoreCLI@2
+  displayName: Compila il codice
+  inputs:
+    command: 'build'
+    projects: 'GreenMobility-be.slnx'
+    arguments: '-c Release'
+
+- task: DotNetCoreCLI@2
+  displayName: Pubblicazione
+  inputs:
+    command: 'publish'
+    publishWebProjects: false
+    projects: 'GreenMobility-be/GreenMobility-be.csproj'
+    arguments: '-c Release -o $(Build.ArtifactStagingDirectory)'
+    zipAfterPublish: true
+
+- task: PublishBuildArtifacts@1
+  displayName: Archivio artefatti
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
+
+- task: AzureRmWebAppDeployment@5
+  displayName: Deploy su App Service
+  inputs:
+    ConnectionType: 'AzureRM'
+    azureSubscription: 'Speziale Azure for Students(cf6e1cad-f361-4c3d-b4ee-c98ec2fc8344)'
+    appType: 'webAppLinux'
+    WebAppName: 'wa-be-greenmobility-dev'
+    packageForLinux: '$(Build.ArtifactStagingDirectory)/**/*.zip'
+    RuntimeStack: 'DOTNETCORE|10.0'
+    DeploymentTypeLinux: 'oneDeploy'
