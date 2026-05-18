@@ -1,0 +1,6 @@
+@GreenMobility_be_HostAddress = http://localhost:5056
+
+GET {{GreenMobility_be_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
