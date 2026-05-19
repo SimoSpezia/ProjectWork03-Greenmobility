@@ -5,9 +5,9 @@ namespace GreenMobility_be.Dto
     public class RegisterDto
     {
         [Length(3, 24)]
-        public required string Nome { get; set; }
+        public required string Name { get; set; }
         [Length(5, 24)]
-        public required string Cognome { get; set; }
+        public required string Surname { get; set; }
         [EmailAddress]
         public required string Email { get; set; }
         [Length(8, 24)]

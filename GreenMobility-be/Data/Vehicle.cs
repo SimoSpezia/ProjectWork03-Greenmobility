@@ -16,6 +16,7 @@ namespace GreenMobility_be.Data
         public VehicleType? VehicleType { get; set; }
         public Hub? Hub { get; set; }
         public List<Rental>? Rentals { get; set; }
+        public bool IsDeleted { get; set; } = false;
 
     }
 }
