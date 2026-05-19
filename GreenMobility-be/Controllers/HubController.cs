@@ -1,5 +1,6 @@
 ﻿using GreenMobility_be.Data;
 using GreenMobility_be.Dto;
+using GreenMobility_be.Mapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +25,7 @@ namespace GreenMobility_be.Controllers
         {
             var hubs = _ctx.Hubs
                 .Where(h => !h.IsDeleted)
-                .Select(h => Mapper.MapEntityToDto(h))
+                .Select(h => HubMapper.MapEntityToDto(h))
                 .ToList();
 
             return Ok(hubs);
@@ -41,7 +42,7 @@ namespace GreenMobility_be.Controllers
             if (hub == null)
                 return NotFound($"Hub con id {id} non trovato");
 
-            return Ok(Mapper.MapEntityToDto(hub));
+            return Ok(HubMapper.MapEntityToDto(hub));
         }
 
         [HttpGet("{id}/vehicles")]
@@ -56,7 +57,7 @@ namespace GreenMobility_be.Controllers
                 .Where(v => v.HubId == id
                          && !v.IsDeleted
                          && v.VehicleStatus.Status == "Disponibile")
-                .Select(v => Mapper.MapEntityToDto(v))
+                .Select(v => HubMapper.MapEntityToDto(v))
                 .ToList();
 
             return Ok(veicoli);
@@ -69,7 +70,7 @@ namespace GreenMobility_be.Controllers
             if (_ctx.Hubs.Any(h => h.Name == dto.Name && !h.IsDeleted))
                 return BadRequest($"Esiste già un hub con il nome '{dto.Name}'");
 
-            var hub = Mapper.MapDtoToEntity(dto);
+            var hub = HubMapper.MapDtoToEntity(dto);
             hub.IsDeleted = false;
 
             try
@@ -85,7 +86,7 @@ namespace GreenMobility_be.Controllers
             return CreatedAtAction(
                 nameof(GetById),
                 new { id = hub.HubId },
-                Mapper.MapEntityToDto(hub)
+                HubMapper.MapEntityToDto(hub)
             );
         }
 
@@ -111,7 +112,7 @@ namespace GreenMobility_be.Controllers
                 return StatusCode(500, $"Errore durante la modifica dell'hub: {ex.Message}");
             }
 
-            return Ok(Mapper.MapEntityToDto(hub));
+            return Ok(HubMapper.MapEntityToDto(hub));
         }
 
         [HttpDelete("{id}")]

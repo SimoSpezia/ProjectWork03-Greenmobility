@@ -1,10 +1,11 @@
 ﻿using GreenMobility_be.Data;
+using GreenMobility_be.Dto;
 
-namespace GreenMobility_be.Dto
+namespace GreenMobility_be.Mapper
 {
     using System.Linq;
 
-    public static class Mapper
+    public static class HubMapper
     {
         public static HubDto MapEntityToDto(Hub hub)
         {
