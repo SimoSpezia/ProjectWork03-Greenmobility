@@ -1,4 +1,5 @@
 using GreenMobility_be.Data;
+using GreenMobility_be.Mapper;
 using Microsoft.AspNetCore.Identity;
 using Scalar.AspNetCore;
 
@@ -10,6 +11,8 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddSqlServer<GreenMobilityDbContext>(builder.Configuration.GetConnectionString("Default"));
+
+builder.Services.AddScoped<VehicleMapper>();
 
 var app = builder.Build();
 

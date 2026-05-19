@@ -6,7 +6,5 @@ namespace GreenMobility_be.Dto
     {
         public int VehicleTypeId { get; set; }
         public int HubId { get; set; }
-        [MaxLength(50)]
-        public required string UIC { get; set; }
     }
 }

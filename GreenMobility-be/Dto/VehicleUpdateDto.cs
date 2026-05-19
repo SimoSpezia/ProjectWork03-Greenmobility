@@ -8,8 +8,6 @@ namespace GreenMobility_be.Dto
         public int? VehicleTypeId { get; set; }
         public int? VehicleStatusId { get; set; }
         public int? HubId { get; set; }
-        [MaxLength(50)]
-        public string? UIC { get; set; }
         [Range(0, 100)]
         public int? BatteryLevel { get; set; }
     }
