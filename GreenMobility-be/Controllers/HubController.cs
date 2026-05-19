@@ -8,7 +8,7 @@ namespace GreenMobility_be.Controllers
 {
     [Route("api/hubs")]
     [ApiController]
-    [Authorize]
+    
     public class HubController : ControllerBase
     {
         private readonly GreenMobilityDbContext _ctx;
@@ -19,6 +19,7 @@ namespace GreenMobility_be.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public IActionResult GetAll()
         {
             var hubs = _ctx.Hubs
@@ -30,6 +31,7 @@ namespace GreenMobility_be.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize]
         public IActionResult GetById(int id)
         {
             var hub = _ctx.Hubs
@@ -43,6 +45,7 @@ namespace GreenMobility_be.Controllers
         }
 
         [HttpGet("{id}/vehicles")]
+        [Authorize]
         public IActionResult GetVehiclesInHub(int id)
         {
             var hubEsiste = _ctx.Hubs.Any(h => h.HubId == id && !h.IsDeleted);
@@ -60,7 +63,7 @@ namespace GreenMobility_be.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.ADMIN_ROLE)]
         public IActionResult Create([FromBody] HubCreateDto dto)
         {
             if (_ctx.Hubs.Any(h => h.Name == dto.Name && !h.IsDeleted))
@@ -87,7 +90,7 @@ namespace GreenMobility_be.Controllers
         }
 
         [HttpPatch("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.ADMIN_ROLE)]
         public IActionResult Update(int id, [FromBody] HubUpdateDto dto)
         {
             var hub = _ctx.Hubs.FirstOrDefault(h => h.HubId == id && !h.IsDeleted);
@@ -112,7 +115,7 @@ namespace GreenMobility_be.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.ADMIN_ROLE)]
         public IActionResult Delete(int id)
         {
             var hub = _ctx.Hubs.FirstOrDefault(h => h.HubId == id && !h.IsDeleted);
