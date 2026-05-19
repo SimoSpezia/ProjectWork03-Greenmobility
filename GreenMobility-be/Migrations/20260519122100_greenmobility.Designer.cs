@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GreenMobility_be.Migrations
 {
     [DbContext(typeof(GreenMobilityDbContext))]
-    [Migration("20260519095004_greenmobility")]
+    [Migration("20260519122100_greenmobility")]
     partial class greenmobility
     {
         /// <inheritdoc />
@@ -42,6 +42,9 @@ namespace GreenMobility_be.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<int>("MaximumCapacity")
                         .HasColumnType("int");
@@ -116,6 +119,9 @@ namespace GreenMobility_be.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
@@ -188,6 +194,9 @@ namespace GreenMobility_be.Migrations
 
                     b.Property<int>("HubId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("UIC")
                         .IsRequired()
