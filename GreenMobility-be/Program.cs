@@ -1,3 +1,5 @@
+using GreenMobility_be.Data;
+using Microsoft.AspNetCore.Identity;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddSqlServer<GreenMobilityDbContext>(builder.Configuration.GetConnectionString("Default"));
 
 var app = builder.Build();
 
