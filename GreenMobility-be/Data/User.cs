@@ -10,5 +10,6 @@ namespace GreenMobility_be.Data
         [MaxLength(100)]
         public required string Surname { get; set; }    
         public List<Rental>? Rentals { get; set; }
+        public bool IsDeleted{ get; set; }=false;
     }
 }
