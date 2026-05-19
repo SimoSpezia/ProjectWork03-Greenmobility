@@ -22,7 +22,8 @@ namespace GreenMobility_be.Migrations
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Address = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     City = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    MaximumCapacity = table.Column<int>(type: "int", nullable: false)
+                    MaximumCapacity = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -50,6 +51,7 @@ namespace GreenMobility_be.Migrations
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Surname = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -213,7 +215,8 @@ namespace GreenMobility_be.Migrations
                     HubId = table.Column<int>(type: "int", nullable: false),
                     UIC = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     BatteryLevel = table.Column<int>(type: "int", nullable: false),
-                    ApiKey = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    ApiKey = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {

@@ -13,5 +13,6 @@ namespace GreenMobility_be.Data
         public required string City { get; set; }
         public int MaximumCapacity { get; set; } 
         public List<Vehicle>? Vehicles { get; set; }
+        public bool IsDeleted { get; set; } = false;
     }
 }

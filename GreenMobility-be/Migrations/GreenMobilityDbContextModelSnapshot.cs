@@ -40,6 +40,9 @@ namespace GreenMobility_be.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<int>("MaximumCapacity")
                         .HasColumnType("int");
 
@@ -111,6 +114,9 @@ namespace GreenMobility_be.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<bool>("LockoutEnabled")
@@ -185,6 +191,9 @@ namespace GreenMobility_be.Migrations
 
                     b.Property<int>("HubId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("UIC")
                         .IsRequired()
