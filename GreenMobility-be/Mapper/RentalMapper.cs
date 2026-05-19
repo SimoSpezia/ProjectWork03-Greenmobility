@@ -2,9 +2,9 @@
 using GreenMobility_be.Dto;
 using System.Linq;
 
-namespace GreenMobility_be.Data
+namespace GreenMobility_be.Mapper
 {
-    public static class Mapper
+    public static class RentalMapper
     {
         public static RentalDto MapEntityToDto(Rental r)
         {

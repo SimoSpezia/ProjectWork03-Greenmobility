@@ -4,16 +4,19 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddSqlServer<GreenMobilityDbContext>(builder.Configuration.GetConnectionString("Default"));
+builder.Services.AddSqlServer<GreenMobilityDbContext>(
+    builder.Configuration.GetConnectionString("Default"));
+
+// ── IDENTITY ─────────────────────────────────────────────────
+// Necessario per [Authorize] e la gestione dei ruoli
+builder.Services.AddIdentityApiEndpoints<User>()   // ← espone /register, /login, /logout
+    .AddRoles<IdentityRole>()                      // ← abilita la gestione dei ruoli
+    .AddEntityFrameworkStores<GreenMobilityDbContext>(); // ← usa il tuo DbContext
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -22,8 +25,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();    // ← mancava: deve stare PRIMA di UseAuthorization
 app.UseAuthorization();
 
+app.MapIdentityApi<User>(); // ← mancava: registra le rotte /login /register /logout
 app.MapControllers();
 
 app.Run();
