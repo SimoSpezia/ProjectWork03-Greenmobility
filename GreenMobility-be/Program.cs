@@ -1,4 +1,5 @@
-using GreenMobility_be.Data;
+﻿using GreenMobility_be.Data;
+using GreenMobility_be.Mapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -9,8 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
-
-builder.Services.AddSqlServer<GreenMobilityDbContext>(builder.Configuration.GetConnectionString("Default"));
+builder.Services.AddSqlServer<GreenMobilityDbContext>(
+    builder.Configuration.GetConnectionString("Default"));
 
 builder.Services.AddIdentity<User, IdentityRole>()
                 .AddEntityFrameworkStores<GreenMobilityDbContext>()
@@ -36,6 +37,9 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddScoped<VehicleMapper>();
+builder.Services.AddScoped<HubMapper>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -50,15 +54,15 @@ app.UseAuthorization();
 app.MapControllers();
 
 
-// BSeeding iniziale di Ruoli e Utente Admin
+// Seeding iniziale di Ruoli e Utente Admin
 
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-    
+
     string[] roleNames = { Roles.CUSTOMER_ROLE, Roles.OPERATOR_ROLE, Roles.ADMIN_ROLE };
-    
+
     foreach (var roleName in roleNames)
     {
         if (!await roleManager.RoleExistsAsync(roleName))
@@ -80,7 +84,7 @@ using (var scope = app.Services.CreateScope())
             Email = adminEmail,
             EmailConfirmed = true
         };
-        
+
         var createAdmin = await userManager.CreateAsync(newAdmin, "MiaoMiao_321");
         if (createAdmin.Succeeded)
         {
@@ -88,4 +92,10 @@ using (var scope = app.Services.CreateScope())
         }
     }
 }
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
 app.Run();
