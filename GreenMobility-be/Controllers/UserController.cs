@@ -25,7 +25,7 @@ namespace GreenMobility_be.Controllers
         [Authorize(Roles = Roles.ADMIN_ROLE)]
         public async Task<IActionResult> GetAllUsers()
         {
-            var users = await _userManager.Users.ToListAsync();
+            var users = await _userManager.Users.Where(u => !u.IsDeleted).ToListAsync();
             var dtos = new List<UserDto>();
 
             foreach (var user in users)
@@ -95,7 +95,7 @@ namespace GreenMobility_be.Controllers
             var result = await _userManager.CreateAsync(newUser, dto.Password);
             if (!result.Succeeded)
             {
-                return BadRequest(new { Message = "Errore nella creazione dell'utente." });
+                return UnprocessableEntity(result.Errors);
             }
 
             await _userManager.AddToRoleAsync(newUser, dto.Role);
@@ -117,10 +117,11 @@ namespace GreenMobility_be.Controllers
         public async Task<IActionResult> UpdateUser([FromRoute] string id, UserUpdateDto dto)
         {
             var user = await _userManager.FindByIdAsync(id);
-            if (user == null)
+            
+            if (user == null || user.IsDeleted)
                 return NotFound(new { Message = $"Utente con ID '{id}' non trovato." });
 
-            if (user.Email != dto.Email)
+            if ((!string.IsNullOrEmpty(dto.Email)) && user.Email != dto.Email)
             {
                 var existingEmail = await _userManager.FindByEmailAsync(dto.Email);
                 if (existingEmail != null)
@@ -132,8 +133,8 @@ namespace GreenMobility_be.Controllers
                 user.Email = dto.Email;
             }
 
-            user.Name = dto.Name;
-            user.Surname = dto.Surname;
+            if (!string.IsNullOrEmpty(dto.Name)) user.Name = dto.Name;
+            if (!string.IsNullOrEmpty(dto.Surname)) user.Surname = dto.Surname;
 
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)

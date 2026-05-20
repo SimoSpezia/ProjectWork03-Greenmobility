@@ -5,14 +5,11 @@ namespace GreenMobility_be.Dto
     public class UserUpdateDto
     {
         [MaxLength(100)]
-        [Required]
-        public required string Name { get; set; }
+        public string? Name { get; set; }
         [MaxLength(100)]
-        [Required]
-        public required string Surname { get; set; }
+        public string? Surname { get; set; }
         [EmailAddress]
-        [Required]
-        public required string Email { get; set; }
+        public string? Email { get; set; }
 
     }
 }
