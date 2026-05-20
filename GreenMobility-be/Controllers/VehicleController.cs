@@ -113,7 +113,7 @@ namespace GreenMobility_be.Controllers
                 return NotFound(new { Message = $"Veicolo con ID '{id}' non trovato." });
             }
 
-            if (dto.HubId.HasValue)
+            if (dto.HubId.HasValue && dto.HubId.Value > 0)
             {
                 var hubExists = await _ctx.Hubs.AnyAsync(h => h.HubId == dto.HubId.Value);
                 if (!hubExists)
@@ -289,7 +289,7 @@ namespace GreenMobility_be.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet]
-        [Authorize(Roles = Roles.ADMIN_ROLE + "," + Roles.OPERATOR_ROLE)]
+        [Authorize]
         [Route("{id}")]
         public async Task<IActionResult> GetVehicleById(int id)
         {

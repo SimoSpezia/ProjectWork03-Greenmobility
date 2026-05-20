@@ -19,12 +19,13 @@ namespace GreenMobility_be.Mapper
                 MaximumCapacity = hub.MaximumCapacity,
                 Vehicles = hub.Vehicles?.Select(v => new VehicleDto
                 {
-                    Id = v.VehicleId,
+                    VehicleId = v.VehicleId,
                     UIC = v.UIC,
                     BatteryLevel = v.BatteryLevel,
                     VehicleTypeId = v.VehicleTypeId,
-                    VehicleStatusId = v.VehicleStatusId
-                }).ToListAsync()
+                    VehicleStatusId = v.VehicleStatusId,
+                    HubId = v.HubId
+                }).ToList()
             };
         }
 
@@ -33,7 +34,7 @@ namespace GreenMobility_be.Mapper
             if (v == null) return null!;
             return new VehicleDto
             {
-                Id = v.VehicleId,
+                VehicleId = v.VehicleId,
                 UIC = v.UIC,
                 BatteryLevel = v.BatteryLevel,
                 VehicleTypeId = v.VehicleTypeId,

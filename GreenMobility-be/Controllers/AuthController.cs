@@ -131,7 +131,7 @@ namespace GreenMobility_be.Controllers
                 var token = new JwtSecurityToken(
                     issuer: _configuration["JWT:ValidIssuer"],
                     audience: _configuration["JWT:ValidAudience"],
-                    expires: DateTime.UtcNow.AddHours(2),
+                    expires: DateTime.Now.AddHours(2),
                     claims: authClaims,
                     signingCredentials: new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256)
                     );

@@ -79,7 +79,7 @@ namespace GreenMobility_be.Controllers
             if (dto.Name != null) hub.Name = dto.Name;
             if (dto.Address != null) hub.Address = dto.Address;
             if (dto.City != null) hub.City = dto.City;
-            if (dto.MaximumCapacity.HasValue) hub.MaximumCapacity = dto.MaximumCapacity.Value;
+            if (dto.MaximumCapacity.HasValue && dto.MaximumCapacity.Value > 0) hub.MaximumCapacity = dto.MaximumCapacity.Value;
 
             try
             {
