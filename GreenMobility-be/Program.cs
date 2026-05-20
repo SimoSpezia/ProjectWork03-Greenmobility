@@ -1,4 +1,4 @@
-using GreenMobility_be.Data;
+﻿using GreenMobility_be.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -9,8 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
-
-builder.Services.AddSqlServer<GreenMobilityDbContext>(builder.Configuration.GetConnectionString("Default"));
+builder.Services.AddSqlServer<GreenMobilityDbContext>(
+    builder.Configuration.GetConnectionString("Default"));
 
 builder.Services.AddIdentity<User, IdentityRole>()
                 .AddEntityFrameworkStores<GreenMobilityDbContext>()
@@ -52,40 +52,9 @@ app.MapControllers();
 
 // BSeeding iniziale di Ruoli e Utente Admin
 
-using (var scope = app.Services.CreateScope())
-{
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-    
-    string[] roleNames = { Roles.CUSTOMER_ROLE, Roles.OPERATOR_ROLE, Roles.ADMIN_ROLE };
-    
-    foreach (var roleName in roleNames)
-    {
-        if (!await roleManager.RoleExistsAsync(roleName))
-        {
-            await roleManager.CreateAsync(new IdentityRole(roleName));
-        }
-    }
-    // Creazione utente admin se non esiste già, da rimuovere in produzione
-    var adminEmail = "admin@mail.it";
-    var adminUser = await userManager.FindByEmailAsync(adminEmail);
+app.UseAuthentication();
+app.UseAuthorization();
 
-    if (adminUser == null)
-    {
-        var newAdmin = new User
-        {
-            UserName = adminEmail,
-            Name = "admin",
-            Surname = "admin",
-            Email = adminEmail,
-            EmailConfirmed = true
-        };
-        
-        var createAdmin = await userManager.CreateAsync(newAdmin, "MiaoMiao_321");
-        if (createAdmin.Succeeded)
-        {
-            await userManager.AddToRoleAsync(newAdmin, Roles.ADMIN_ROLE);
-        }
-    }
-}
+app.MapControllers();
+
 app.Run();
