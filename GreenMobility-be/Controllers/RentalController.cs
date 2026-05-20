@@ -14,7 +14,7 @@ namespace GreenMobility_be.Controllers
     public class NoleggioController : ControllerBase
     {
         private readonly GreenMobilityDbContext _ctx;
-        private readonly RentalMapper _mapper; // mapper iniettato
+        private readonly RentalMapper _mapper;
 
         public NoleggioController(GreenMobilityDbContext ctx, RentalMapper mapper)
         {
@@ -22,7 +22,7 @@ namespace GreenMobility_be.Controllers
             _mapper = mapper;
         }
 
-        // ── GET ALL ──────────────────────────────────────────────
+        // API GET che recupera la lista completa di tutti i noleggi
         [HttpGet]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
         public async Task<IActionResult> GetAll()
@@ -31,69 +31,12 @@ namespace GreenMobility_be.Controllers
                 .Include(r => r.Vehicle)
                 .Include(r => r.User)
                 .OrderByDescending(r => r.EndDate)
-                .ToListAsync();                                 // ← async
+                .ToListAsync();
 
             return Ok(noleggi.ConvertAll(_mapper.MapEntityToDto));
         }
 
-        // ── GET BY ID ────────────────────────────────────────────
-        [HttpGet("{id}")]
-        [Authorize(Roles = Roles.ADMIN_ROLE)]
-        public async Task<IActionResult> GetById([FromRoute] int id)
-        {
-            var noleggio = await _ctx.Rentals
-                .Include(r => r.Vehicle)
-                .Include(r => r.User)
-                .SingleOrDefaultAsync(r => r.RentalId == id);  // ← async
-
-            if (noleggio == null)
-                return NotFound($"Noleggio con id {id} non trovato");
-
-            return Ok(_mapper.MapEntityToDto(noleggio));
-        }
-
-        // ── GET PER UTENTE ───────────────────────────────────────
-        [HttpGet("utente/{id}")]
-        [Authorize(Roles = Roles.ADMIN_ROLE + "," + Roles.CUSTOMER_ROLE)]
-        public async Task<IActionResult> GetByUtente([FromRoute] string id)
-        {
-            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var currentUserRole = User.FindFirstValue(ClaimTypes.Role);
-
-            if (currentUserRole == Roles.CUSTOMER_ROLE && currentUserId != id)
-                return Forbid();
-
-            var noleggi = await _ctx.Rentals
-                .Include(r => r.Vehicle)
-                .Include(r => r.User)
-                .Where(r => r.UserId == id)
-                .OrderByDescending(r => r.EndDate)
-                .ToListAsync();                                 // ← async
-
-            return Ok(noleggi.ConvertAll(_mapper.MapEntityToDto));
-        }
-
-        // ── GET ATTIVO ───────────────────────────────────────────
-        [HttpGet("attivo")]
-        [Authorize(Roles = Roles.CUSTOMER_ROLE)]
-        public async Task<IActionResult> GetAttivo()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            var noleggioAttivo = await _ctx.Rentals
-                .Include(r => r.Vehicle)
-                .Include(r => r.User)
-                .Where(r => r.UserId == userId && r.EndDate == null)
-                .OrderByDescending(r => r.RentalId)
-                .FirstOrDefaultAsync();                         // ← async
-
-            if (noleggioAttivo == null)
-                return NotFound("Nessun noleggio attivo per l'utente corrente.");
-
-            return Ok(_mapper.MapEntityToDto(noleggioAttivo));
-        }
-
-        // ── PRENOTA ──────────────────────────────────────────────
+        // API POST che permette a un utente di prenotare un veicolo
         [HttpPost("prenotaMezzo")]
         [Authorize(Roles = Roles.CUSTOMER_ROLE)]
         public async Task<IActionResult> Prenota([FromBody] RentalCreateDto dto)
@@ -103,19 +46,18 @@ namespace GreenMobility_be.Controllers
 
             var veicolo = await _ctx.Vehicles
                 .Include(v => v.VehicleStatus)
-                .FirstOrDefaultAsync(v => v.VehicleId == dto.VehicleId && !v.IsDeleted); // ← async
+                .FirstOrDefaultAsync(v => v.VehicleId == dto.VehicleId && !v.IsDeleted);
 
             if (veicolo == null || veicolo.VehicleStatus.VehicleStatusId != 1)
                 return BadRequest("Veicolo non disponibile.");
 
-            // Generazione codice monouso
             string codiceMonouso;
             bool codiceEsistente;
             do
             {
                 codiceMonouso = Random.Shared.Next(100000, 1000000).ToString();
                 codiceEsistente = await _ctx.Rentals
-                    .AnyAsync(r => r.RentalCode == codiceMonouso && r.EndDate == null); // ← async
+                    .AnyAsync(r => r.RentalCode == codiceMonouso && r.EndDate == null);
             } while (codiceEsistente);
 
             var noleggio = new Rental
@@ -128,8 +70,8 @@ namespace GreenMobility_be.Controllers
             try
             {
                 _ctx.Rentals.Add(noleggio);
-                veicolo.VehicleStatusId = 3;                   // "Prenotato"
-                await _ctx.SaveChangesAsync();                  // ← async
+                veicolo.VehicleStatusId = 3;
+                await _ctx.SaveChangesAsync();
             }
             catch (DbUpdateException ex)
             {
@@ -144,7 +86,7 @@ namespace GreenMobility_be.Controllers
             });
         }
 
-        // ── SBLOCCA ──────────────────────────────────────────────
+        // API POST che sblocca il veicolo prenotato validando il codice monouso
         [HttpPost("sbloccaMezzo")]
         [AllowAnonymous]
         public async Task<IActionResult> SbloccaMezzo([FromBody] RentalSbloccaDto dto)
@@ -196,11 +138,11 @@ namespace GreenMobility_be.Controllers
             noleggio.RentalCode = null;
 
             if (noleggio.Vehicle != null)
-                noleggio.Vehicle.VehicleStatusId = 2;       // "In uso"
+                noleggio.Vehicle.VehicleStatusId = 2;
 
             try
             {
-                await _ctx.SaveChangesAsync();              // ← async
+                await _ctx.SaveChangesAsync();
             }
             catch (DbUpdateException ex)
             {
@@ -215,14 +157,14 @@ namespace GreenMobility_be.Controllers
             });
         }
 
-        // ── TERMINA ──────────────────────────────────────────────
+        // API PATCH che termina il noleggio ed effettua il calcolo della spesa e il rilascio del veicolo
         [HttpPatch("{id}/termina")]
         [Authorize(Roles = Roles.CUSTOMER_ROLE + "," + Roles.ADMIN_ROLE)]
         public async Task<IActionResult> Termina([FromRoute] int id, [FromBody] RentalUpdateDto dto)
         {
             var noleggio = await _ctx.Rentals
                 .Include(r => r.Vehicle)
-                .FirstOrDefaultAsync(r => r.RentalId == id && r.EndDate == null); // ← async
+                .FirstOrDefaultAsync(r => r.RentalId == id && r.EndDate == null);
 
             if (noleggio == null)
                 return NotFound("Noleggio non trovato o già terminato.");
@@ -252,7 +194,7 @@ namespace GreenMobility_be.Controllers
 
             try
             {
-                await _ctx.SaveChangesAsync();              // ← async
+                await _ctx.SaveChangesAsync();
             }
             catch (DbUpdateException ex)
             {

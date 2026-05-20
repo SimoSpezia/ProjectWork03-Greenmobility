@@ -33,8 +33,6 @@ namespace GreenMobility_be.Mapper
         public void UpdateEntity(Rental r, RentalUpdateDto dto)
         {
             if (dto == null || r == null) return;
-            if (dto.StartDate.HasValue) r.StartDate = dto.StartDate;
-            if (dto.EndDate.HasValue) r.EndDate = dto.EndDate;
             if (dto.TotalCost.HasValue) r.TotalCost = (decimal)dto.TotalCost.Value;
         }
     }
