@@ -37,6 +37,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddScoped<UserMapper>();
 builder.Services.AddScoped<VehicleMapper>();
 builder.Services.AddScoped<HubMapper>();
 

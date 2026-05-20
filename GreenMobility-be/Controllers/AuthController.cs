@@ -9,7 +9,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace GreenMobility_be.Controllers
+    namespace GreenMobility_be.Controllers
     {
         [Route("api/[controller]")]
         [ApiController]
@@ -76,50 +76,7 @@ namespace GreenMobility_be.Controllers
                 {
                     return Unauthorized("Password errata!");
                 }
-            }
-
-            //Creazione nuovo utente da parte di un admin
-            [HttpPost]
-            [Route("CreateUser")]
-            [Authorize(Roles = Roles.ADMIN_ROLE)]
-            public async Task<IActionResult> CreateUser(RegisterDto dto, [FromQuery] string role)
-            {
-                var userExist = await _userManager.FindByEmailAsync(dto.Email);
-                if (userExist != null)
-                    return BadRequest("Utente già esistente!");
-
-                User user = new User()
-                {
-                    Name = dto.Name,
-                    Surname = dto.Surname,
-                    Email = dto.Email,
-                    UserName = dto.Email,
-                    SecurityStamp = Guid.NewGuid().ToString()
-                };
-                var result = await _userManager.CreateAsync(user, dto.Password);
-                if (!result.Succeeded)
-                    return UnprocessableEntity(result.Errors);
-                if (role == null)
-                {
-                    return BadRequest("Ruolo non specificato");
-                }
-                if (role.ToLower() == Roles.CUSTOMER_ROLE.ToLower())
-                {
-                    await _userManager.AddToRoleAsync(user, Roles.CUSTOMER_ROLE);
-                    return Created();
-                }
-                if (role.ToLower() == Roles.OPERATOR_ROLE.ToLower())
-                {
-                    await _userManager.AddToRoleAsync(user, Roles.OPERATOR_ROLE);
-                    return Created();
-                }
-                if (role.ToLower() == Roles.ADMIN_ROLE.ToLower())
-                {
-                    await _userManager.AddToRoleAsync(user, Roles.ADMIN_ROLE);
-                    return Created();
-                }
-                return BadRequest("Ruolo non valido");
-            }
+            }            
 
             //generazione token 
             private JwtSecurityToken GetToken(List<Claim> authClaims)
