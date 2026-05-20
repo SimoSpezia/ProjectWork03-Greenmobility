@@ -1,4 +1,5 @@
 using GreenMobility_be.Data;
+using GreenMobility_be.Mapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -35,6 +36,8 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"])),
     };
 });
+
+builder.Services.AddScoped<UserMapper>();
 
 var app = builder.Build();
 
