@@ -2,7 +2,6 @@
 {
     public class RentalUpdateDto
     {
-        public decimal? TotalCost { get; set; }
         public int? BatteryLevel { get; set; }
     }
 }

@@ -40,6 +40,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<UserMapper>();
 builder.Services.AddScoped<VehicleMapper>();
 builder.Services.AddScoped<HubMapper>();
+builder.Services.AddScoped<RentalMapper>();
 
 var app = builder.Build();
 
@@ -93,9 +94,6 @@ using (var scope = app.Services.CreateScope())
         }
     }
 }
-
-app.UseAuthentication();
-app.UseAuthorization();
 
 app.MapControllers();
 

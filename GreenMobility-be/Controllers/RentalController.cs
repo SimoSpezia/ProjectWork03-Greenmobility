@@ -10,7 +10,6 @@ namespace GreenMobility_be.Controllers
 {
     [Route("api/noleggi")]
     [ApiController]
-    [Authorize]
     public class NoleggioController : ControllerBase
     {
         private readonly GreenMobilityDbContext _ctx;
@@ -27,19 +26,19 @@ namespace GreenMobility_be.Controllers
         [Authorize(Roles = Roles.ADMIN_ROLE)]
         public async Task<IActionResult> GetAll()
         {
-            var noleggi = await _ctx.Rentals
+            var rentals = await _ctx.Rentals
                 .Include(r => r.Vehicle)
                 .Include(r => r.User)
                 .OrderByDescending(r => r.EndDate)
                 .ToListAsync();
 
-            return Ok(noleggi.ConvertAll(_mapper.MapEntityToDto));
+            return Ok(rentals.ConvertAll(_mapper.MapEntityToDto));
         }
 
         // API POST che permette a un utente di prenotare un veicolo
-        [HttpPost("prenotaMezzo")]
+        [HttpPost("ReserveVehicle")]
         [Authorize(Roles = Roles.CUSTOMER_ROLE)]
-        public async Task<IActionResult> Prenota([FromBody] RentalCreateDto dto)
+        public async Task<IActionResult> Reserve([FromBody] RentalCreateDto dto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Unauthorized();
@@ -87,58 +86,41 @@ namespace GreenMobility_be.Controllers
         }
 
         // API POST che sblocca il veicolo prenotato validando il codice monouso
-        [HttpPost("sbloccaMezzo")]
+        [HttpPost("UnlockVehicle")]
         [AllowAnonymous]
-        public async Task<IActionResult> SbloccaMezzo([FromBody] RentalSbloccaDto dto)
+        public async Task<IActionResult> UnlockVehicle([FromBody] RentalUnlockDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.RentalCode)
-                || dto.RentalCode.Length != 6
-                || !dto.RentalCode.All(char.IsDigit))
+            if (string.IsNullOrWhiteSpace(dto.RentalCode) || dto.RentalCode.Length != 6 || !dto.RentalCode.All(char.IsDigit))
                 return BadRequest("Formato codice non valido. Deve essere di 6 cifre numeriche.");
 
-            var authHeader = Request.Headers["Authorization"].FirstOrDefault();
-            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
-                return Unauthorized("API Key del mezzo mancante nell'header della richiesta.");
+            if (!Request.Headers.TryGetValue("ApiKey", out var extractedApiKey))
+                return Unauthorized("API Key del mezzo mancante.");
 
-            var tokenString = authHeader.Substring("Bearer ".Length).Trim();
-            int idMezzoDalToken;
+            var apiKeyString = extractedApiKey.ToString().Trim();
 
-            try
-            {
-                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-                var jwtToken = handler.ReadJwtToken(tokenString);
-                var idString = jwtToken.Claims
-                    .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(apiKeyString, out var parsedGuid))
+                return BadRequest("Formato API Key non valido.");
 
-                if (!int.TryParse(idString, out idMezzoDalToken))
-                    return Unauthorized("Impossibile estrarre l'ID del mezzo dall'API Key.");
-            }
-            catch
-            {
-                return Unauthorized("API Key del mezzo corrotta o non valida.");
-            }
+            var physicalVehicle = await _ctx.Vehicles.FirstOrDefaultAsync(v => v.ApiKey == parsedGuid);
 
-            var noleggio = await _ctx.Rentals
-                .Include(r => r.Vehicle)
-                .FirstOrDefaultAsync(r =>
-                    r.RentalCode == dto.RentalCode
-                    && r.StartDate == null
-                    && r.EndDate == null);
+            if (physicalVehicle == null)
+                return Unauthorized("API Key non riconosciuta o veicolo inesistente.");
 
-            if (noleggio == null)
+            var rental = await _ctx.Rentals
+                .FirstOrDefaultAsync(r => r.RentalCode == dto.RentalCode && r.StartDate == null && r.EndDate == null);
+
+            if (rental == null)
                 return BadRequest("Codice inesistente, scaduto o già utilizzato.");
 
-            if (noleggio.VehicleId != idMezzoDalToken)
+            if (rental.VehicleId != physicalVehicle.VehicleId)
                 return BadRequest("Questo codice di sblocco appartiene a un altro veicolo.");
 
-            if (noleggio.Vehicle != null && noleggio.Vehicle.VehicleStatusId != 3)
+            if (physicalVehicle.VehicleStatusId != 3)
                 return BadRequest("Il veicolo non si trova nello stato corretto per lo sblocco.");
 
-            noleggio.StartDate = DateTimeOffset.UtcNow;
-            noleggio.RentalCode = null;
-
-            if (noleggio.Vehicle != null)
-                noleggio.Vehicle.VehicleStatusId = 2;
+            rental.StartDate = DateTimeOffset.UtcNow;
+            rental.RentalCode = null;
+            physicalVehicle.VehicleStatusId = 2;
 
             try
             {
@@ -152,44 +134,49 @@ namespace GreenMobility_be.Controllers
             return Ok(new
             {
                 Messaggio = "Veicolo sbloccato, buon viaggio!",
-                StartDate = noleggio.StartDate,
-                VehicleId = noleggio.VehicleId
+                StartDate = rental.StartDate,
+                VehicleId = physicalVehicle.VehicleId
             });
         }
 
         // API PATCH che termina il noleggio ed effettua il calcolo della spesa e il rilascio del veicolo
-        [HttpPatch("{id}/termina")]
-        [Authorize(Roles = Roles.CUSTOMER_ROLE + "," + Roles.ADMIN_ROLE)]
-        public async Task<IActionResult> Termina([FromRoute] int id, [FromBody] RentalUpdateDto dto)
+        [HttpPatch("endrental")]
+        [AllowAnonymous]
+        public async Task<IActionResult> EndRental([FromBody] RentalUpdateDto dto)
         {
-            var noleggio = await _ctx.Rentals
+            if (!Request.Headers.TryGetValue("ApiKey", out var extractedApiKey))
+                return Unauthorized("API Key del mezzo mancante nell'header.");
+
+            var apiKeyString = extractedApiKey.ToString().Trim();
+
+            if (!Guid.TryParse(apiKeyString, out var parsedGuid))
+                return BadRequest("Formato API Key non valido.");
+
+            var physicalVehicle = await _ctx.Vehicles.FirstOrDefaultAsync(v => v.ApiKey == parsedGuid);
+
+            if (physicalVehicle == null)
+                return Unauthorized("API Key non riconosciuta o veicolo inesistente.");
+
+            var rental = await _ctx.Rentals
                 .Include(r => r.Vehicle)
-                .FirstOrDefaultAsync(r => r.RentalId == id && r.EndDate == null);
+                .FirstOrDefaultAsync(r => r.VehicleId == physicalVehicle.VehicleId && r.EndDate == null);
 
-            if (noleggio == null)
-                return NotFound("Noleggio non trovato o già terminato.");
+            if (rental == null)
+                return NotFound("Nessun noleggio attivo trovato per questo veicolo.");
 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var userRole = User.FindFirstValue(ClaimTypes.Role);
-
-            if (userRole == Roles.CUSTOMER_ROLE && noleggio.UserId != userId)
-                return Forbid();
-
-            if (!noleggio.StartDate.HasValue)
+            if (!rental.StartDate.HasValue)
                 return BadRequest("Impossibile terminare un noleggio non ancora avviato.");
 
-            noleggio.EndDate = DateTimeOffset.UtcNow;
+            rental.EndDate = DateTimeOffset.UtcNow;
+            var duration = rental.EndDate.Value - rental.StartDate.Value;
+            var minutes = (decimal)duration.TotalMinutes;
 
-            var durata = noleggio.EndDate.Value - noleggio.StartDate.Value;
-            var minuti = (decimal)durata.TotalMinutes;
-            noleggio.TotalCost = Math.Round(minuti * 0.15m, 2);
-
-            if (noleggio.Vehicle != null)
+            rental.TotalCost = Math.Round(Math.Max(1, minutes) * 0.20m, 2);
+             
+            if (rental.Vehicle != null && dto.BatteryLevel.HasValue)
             {
-                if (dto.BatteryLevel.HasValue)
-                    noleggio.Vehicle.BatteryLevel = dto.BatteryLevel.Value;
-
-                noleggio.Vehicle.VehicleStatusId = (noleggio.Vehicle.BatteryLevel < 15) ? 4 : 1;
+                rental.Vehicle.BatteryLevel = dto.BatteryLevel.Value;
+                rental.Vehicle.VehicleStatusId = (rental.Vehicle.BatteryLevel < 15) ? 4 : 1;
             }
 
             try
@@ -204,8 +191,9 @@ namespace GreenMobility_be.Controllers
             return Ok(new
             {
                 Messaggio = "Noleggio terminato",
-                Costo = noleggio.TotalCost,
-                Durata = durata.ToString(@"hh\:mm\:ss")
+                Costo = rental.TotalCost,
+                Durata = duration.ToString(@"hh\:mm\:ss"),
+                BatteriaResidua = dto.BatteryLevel
             });
         }
     }

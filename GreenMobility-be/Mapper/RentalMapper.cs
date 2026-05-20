@@ -29,11 +29,5 @@ namespace GreenMobility_be.Mapper
                 VehicleId = dto.VehicleId
             };
         }
-
-        public void UpdateEntity(Rental r, RentalUpdateDto dto)
-        {
-            if (dto == null || r == null) return;
-            if (dto.TotalCost.HasValue) r.TotalCost = (decimal)dto.TotalCost.Value;
-        }
     }
 }
