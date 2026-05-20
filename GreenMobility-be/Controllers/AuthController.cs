@@ -1,15 +1,15 @@
-﻿    using GreenMobility_be.Data;
-    using GreenMobility_be.Dto;
-    using Microsoft.AspNetCore.Authorization;
-    using Microsoft.AspNetCore.Http;
-    using Microsoft.AspNetCore.Identity;
-    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.IdentityModel.Tokens;
-    using System.IdentityModel.Tokens.Jwt;
-    using System.Security.Claims;
-    using System.Text;
+﻿using GreenMobility_be.Data;
+using GreenMobility_be.Dto;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
-    namespace GreenMobility_be.Controller
+namespace GreenMobility_be.Controllers
     {
         [Route("api/[controller]")]
         [ApiController]
