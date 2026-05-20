@@ -5,9 +5,9 @@ namespace GreenMobility_be.Mapper
 {
     using System.Linq;
 
-    public static class HubMapper
+    public class HubMapper
     {
-        public static HubDto MapEntityToDto(Hub hub)
+        public HubDto MapEntityToDto(Hub hub)
         {
             if (hub == null) return null!;
             return new HubDto
@@ -24,12 +24,11 @@ namespace GreenMobility_be.Mapper
                     BatteryLevel = v.BatteryLevel,
                     VehicleTypeId = v.VehicleTypeId,
                     VehicleStatusId = v.VehicleStatusId
-                }).ToList()
-                ,
+                }).ToListAsync()
             };
         }
 
-        public static VehicleDto MapEntityToDto(Vehicle v)
+        public VehicleDto MapEntityToDto(Vehicle v)
         {
             if (v == null) return null!;
             return new VehicleDto
@@ -42,7 +41,7 @@ namespace GreenMobility_be.Mapper
             };
         }
 
-        public static Hub MapDtoToEntity(HubCreateDto dto)
+        public Hub MapDtoToEntity(HubCreateDto dto)
         {
             if (dto == null) return null!;
             return new Hub
@@ -54,7 +53,7 @@ namespace GreenMobility_be.Mapper
             };
         }
 
-        public static Hub MapDtoToEntity(HubDto dto)
+        public Hub MapDtoToEntity(HubDto dto)
         {
             if (dto == null) return null!;
             return new Hub
@@ -64,18 +63,8 @@ namespace GreenMobility_be.Mapper
                 Address = dto.Address,
                 City = dto.City,
                 MaximumCapacity = dto.MaximumCapacity,
-                // Do not create Vehicle entities from DTO here (ApiKey and other required fields missing).
                 Vehicles = null,
             };
-        }
-
-        public static void MapUpdateEntity(HubUpdateDto dto, Hub hub)
-        {
-            if (dto == null || hub == null) return;
-            if (!string.IsNullOrEmpty(dto.Name)) hub.Name = dto.Name;
-            if (!string.IsNullOrEmpty(dto.Address)) hub.Address = dto.Address;
-            if (!string.IsNullOrEmpty(dto.City)) hub.City = dto.City;
-            if (dto.MaximumCapacity.HasValue) hub.MaximumCapacity = dto.MaximumCapacity.Value;
         }
     }
 }

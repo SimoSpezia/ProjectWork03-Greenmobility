@@ -13,6 +13,7 @@ namespace GreenMobility_be.Dto
 
         public required string City { get; set; }
         public int MaximumCapacity { get; set; }
+        //public int CurrentVehicleCount { get; set; }
         public List<VehicleDto>? Vehicles { get; set; }
 
     }

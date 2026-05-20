@@ -9,74 +9,52 @@ namespace GreenMobility_be.Controllers
 {
     [Route("api/hubs")]
     [ApiController]
-    
-    public class HubController : ControllerBase
-    {
-        private readonly GreenMobilityDbContext _ctx;
 
-        public HubController(GreenMobilityDbContext ctx)
-        {
-            _ctx = ctx;
-        }
+    public class HubController(GreenMobilityDbContext ctx, HubMapper mapper) : ControllerBase
+    {
+        private readonly GreenMobilityDbContext _ctx = ctx;
+        private readonly HubMapper _mapper = mapper;
 
         [HttpGet]
         [Authorize]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var hubs = _ctx.Hubs
-                .Where(h => !h.IsDeleted)
-                .Select(h => HubMapper.MapEntityToDto(h))
-                .ToList();
+            var hubs = await _ctx.Hubs
+                       .Where(h => !h.IsDeleted)
+                       .ToListAsync();
 
-            return Ok(hubs);
+            return Ok(hubs.ConvertAll(_mapper.MapEntityToDto));
         }
 
         [HttpGet("{id}")]
         [Authorize]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var hub = _ctx.Hubs
-                .Include(h => h.Vehicles)
-                .SingleOrDefault(h => h.HubId == id && !h.IsDeleted);
+            var hub = await _ctx.Hubs
+                .Where(h => !h.IsDeleted)
+                .Include(h => h.Vehicles.Where(v => !v.IsDeleted && v.VehicleStatus.Status == "Disponibile"))
+                .SingleOrDefaultAsync(h => h.HubId == id);
 
             if (hub == null)
                 return NotFound($"Hub con id {id} non trovato");
 
-            return Ok(HubMapper.MapEntityToDto(hub));
-        }
-
-        [HttpGet("{id}/vehicles")]
-        [Authorize]
-        public IActionResult GetVehiclesInHub(int id)
-        {
-            var hubEsiste = _ctx.Hubs.Any(h => h.HubId == id && !h.IsDeleted);
-            if (!hubEsiste)
-                return NotFound($"Hub con id {id} non trovato");
-
-            var veicoli = _ctx.Vehicles
-                .Where(v => v.HubId == id
-                         && !v.IsDeleted
-                         && v.VehicleStatus.Status == "Disponibile")
-                .Select(v => HubMapper.MapEntityToDto(v))
-                .ToList();
-
-            return Ok(veicoli);
+            return Ok(_mapper.MapEntityToDto(hub));
         }
 
         [HttpPost]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
-        public IActionResult Create([FromBody] HubCreateDto dto)
+        public async Task<IActionResult> Create([FromBody] HubCreateDto dto)
         {
-            if (_ctx.Hubs.Any(h => h.Name == dto.Name && !h.IsDeleted))
+            if (await _ctx.Hubs.AnyAsync(h => h.Name == dto.Name && !h.IsDeleted))
                 return BadRequest($"Esiste già un hub con il nome '{dto.Name}'");
 
-            var hub = HubMapper.MapDtoToEntity(dto);
+            var hub = _mapper.MapDtoToEntity(dto);
             hub.IsDeleted = false;
 
             try
             {
                 _ctx.Hubs.Add(hub);
-                _ctx.SaveChanges();
+                await _ctx.SaveChangesAsync();
             }
             catch (DbUpdateException ex)
             {
@@ -86,15 +64,15 @@ namespace GreenMobility_be.Controllers
             return CreatedAtAction(
                 nameof(GetById),
                 new { id = hub.HubId },
-                HubMapper.MapEntityToDto(hub)
+                _mapper.MapEntityToDto(hub)
             );
         }
 
         [HttpPatch("{id}")]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
-        public IActionResult Update(int id, [FromBody] HubUpdateDto dto)
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] HubUpdateDto dto)
         {
-            var hub = _ctx.Hubs.FirstOrDefault(h => h.HubId == id && !h.IsDeleted);
+            var hub = await _ctx.Hubs.FirstOrDefaultAsync(h => h.HubId == id && !h.IsDeleted);
             if (hub == null)
                 return NotFound($"Hub con id {id} non trovato");
 
@@ -105,35 +83,32 @@ namespace GreenMobility_be.Controllers
 
             try
             {
-                _ctx.SaveChanges();
+                await _ctx.SaveChangesAsync();
             }
             catch (DbUpdateException ex)
             {
                 return StatusCode(500, $"Errore durante la modifica dell'hub: {ex.Message}");
             }
 
-            return Ok(HubMapper.MapEntityToDto(hub));
+            return Ok(_mapper.MapEntityToDto(hub));
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            var hub = _ctx.Hubs.FirstOrDefault(h => h.HubId == id && !h.IsDeleted);
+            var hub = await _ctx.Hubs.FirstOrDefaultAsync(h => h.HubId == id && !h.IsDeleted);
             if (hub == null)
                 return NotFound($"Hub con id {id} non trovato");
-
             hub.IsDeleted = true;
-
             try
             {
-                _ctx.SaveChanges();
+                await _ctx.SaveChangesAsync();
             }
             catch (DbUpdateException ex)
             {
                 return StatusCode(500, $"Errore durante la cancellazione dell'hub: {ex.Message}");
             }
-
             return NoContent();
         }
     }
