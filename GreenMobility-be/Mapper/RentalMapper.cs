@@ -1,16 +1,16 @@
 ﻿using GreenMobility_be.Data;
 using GreenMobility_be.Dto;
-using System.Linq;
 
 namespace GreenMobility_be.Mapper
 {
-    public static class RentalMapper
+    public class RentalMapper
     {
-        public static RentalDto MapEntityToDto(Rental r)
+        public RentalDto MapEntityToDto(Rental r)
         {
             if (r == null) return null!;
             return new RentalDto
             {
+                Id = r.RentalId,
                 UserId = r.UserId,
                 VehicleId = r.VehicleId,
                 StartDate = r.StartDate,
@@ -20,23 +20,22 @@ namespace GreenMobility_be.Mapper
             };
         }
 
-        public static Rental MapDtoToEntity(RentalCreateDto dto)
+        public Rental MapDtoToEntity(RentalCreateDto dto)
         {
             if (dto == null) return null!;
             return new Rental
             {
-                UserId = dto.UserId.ToString(), // Conversione necessaria dato che in Entity Rental è string
+                UserId = dto.UserId.ToString(),
                 VehicleId = dto.VehicleId
             };
         }
 
-        public static void UpdateEntity(Rental r, RentalUpdateDto dto)
+        public void UpdateEntity(Rental r, RentalUpdateDto dto)
         {
             if (dto == null || r == null) return;
             if (dto.StartDate.HasValue) r.StartDate = dto.StartDate;
             if (dto.EndDate.HasValue) r.EndDate = dto.EndDate;
             if (dto.TotalCost.HasValue) r.TotalCost = (decimal)dto.TotalCost.Value;
         }
-
     }
 }

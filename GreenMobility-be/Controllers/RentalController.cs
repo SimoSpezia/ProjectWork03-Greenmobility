@@ -1,5 +1,6 @@
 using GreenMobility_be.Data;
 using GreenMobility_be.Dto;
+using GreenMobility_be.Mapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,44 +14,48 @@ namespace GreenMobility_be.Controllers
     public class NoleggioController : ControllerBase
     {
         private readonly GreenMobilityDbContext _ctx;
+        private readonly RentalMapper _mapper; // mapper iniettato
 
-        public NoleggioController(GreenMobilityDbContext ctx)
+        public NoleggioController(GreenMobilityDbContext ctx, RentalMapper mapper)
         {
             _ctx = ctx;
+            _mapper = mapper;
         }
 
+        // ── GET ALL ──────────────────────────────────────────────
         [HttpGet]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var noleggi = _ctx.Rentals
+            var noleggi = await _ctx.Rentals
                 .Include(r => r.Vehicle)
                 .Include(r => r.User)
                 .OrderByDescending(r => r.EndDate)
-                .Select(r => Mapper.MapEntityToDto(r))
-                .ToList();
+                .ToListAsync();                                 // ← async
 
-            return Ok(noleggi);
+            return Ok(noleggi.ConvertAll(_mapper.MapEntityToDto));
         }
 
+        // ── GET BY ID ────────────────────────────────────────────
         [HttpGet("{id}")]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var noleggio = _ctx.Rentals
+            var noleggio = await _ctx.Rentals
                 .Include(r => r.Vehicle)
                 .Include(r => r.User)
-                .SingleOrDefault(r => r.RentalId == id);
+                .SingleOrDefaultAsync(r => r.RentalId == id);  // ← async
 
             if (noleggio == null)
                 return NotFound($"Noleggio con id {id} non trovato");
 
-            return Ok(Mapper.MapEntityToDto(noleggio));
+            return Ok(_mapper.MapEntityToDto(noleggio));
         }
 
+        // ── GET PER UTENTE ───────────────────────────────────────
         [HttpGet("utente/{id}")]
         [Authorize(Roles = Roles.ADMIN_ROLE + "," + Roles.CUSTOMER_ROLE)]
-        public IActionResult GetUtenteById(string id)
+        public async Task<IActionResult> GetByUtente([FromRoute] string id)
         {
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var currentUserRole = User.FindFirstValue(ClaimTypes.Role);
@@ -58,57 +63,59 @@ namespace GreenMobility_be.Controllers
             if (currentUserRole == Roles.CUSTOMER_ROLE && currentUserId != id)
                 return Forbid();
 
-            var noleggi = _ctx.Rentals
+            var noleggi = await _ctx.Rentals
                 .Include(r => r.Vehicle)
                 .Include(r => r.User)
                 .Where(r => r.UserId == id)
                 .OrderByDescending(r => r.EndDate)
-                .Select(r => Mapper.MapEntityToDto(r))
-                .ToList();
+                .ToListAsync();                                 // ← async
 
-            return Ok(noleggi);
+            return Ok(noleggi.ConvertAll(_mapper.MapEntityToDto));
         }
 
+        // ── GET ATTIVO ───────────────────────────────────────────
         [HttpGet("attivo")]
         [Authorize(Roles = Roles.CUSTOMER_ROLE)]
-        public IActionResult GetAttivo()
+        public async Task<IActionResult> GetAttivo()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var noleggioAttivo = _ctx.Rentals
+            var noleggioAttivo = await _ctx.Rentals
                 .Include(r => r.Vehicle)
                 .Include(r => r.User)
                 .Where(r => r.UserId == userId && r.EndDate == null)
                 .OrderByDescending(r => r.RentalId)
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();                         // ← async
 
             if (noleggioAttivo == null)
                 return NotFound("Nessun noleggio attivo per l'utente corrente.");
 
-            return Ok(Mapper.MapEntityToDto(noleggioAttivo));
+            return Ok(_mapper.MapEntityToDto(noleggioAttivo));
         }
 
+        // ── PRENOTA ──────────────────────────────────────────────
         [HttpPost("prenotaMezzo")]
         [Authorize(Roles = Roles.CUSTOMER_ROLE)]
-        public IActionResult Prenota([FromBody] RentalCreateDto dto)
+        public async Task<IActionResult> Prenota([FromBody] RentalCreateDto dto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Unauthorized();
 
-            var veicolo = _ctx.Vehicles
+            var veicolo = await _ctx.Vehicles
                 .Include(v => v.VehicleStatus)
-                .FirstOrDefault(v => v.VehicleId == dto.VehicleId && !v.IsDeleted);
+                .FirstOrDefaultAsync(v => v.VehicleId == dto.VehicleId && !v.IsDeleted); // ← async
 
             if (veicolo == null || veicolo.VehicleStatus.VehicleStatusId != 1)
                 return BadRequest("Veicolo non disponibile.");
 
+            // Generazione codice monouso
             string codiceMonouso;
             bool codiceEsistente;
-
             do
             {
                 codiceMonouso = Random.Shared.Next(100000, 1000000).ToString();
-                codiceEsistente = _ctx.Rentals.Any(r => r.RentalCode == codiceMonouso && r.EndDate == null);
+                codiceEsistente = await _ctx.Rentals
+                    .AnyAsync(r => r.RentalCode == codiceMonouso && r.EndDate == null); // ← async
             } while (codiceEsistente);
 
             var noleggio = new Rental
@@ -121,22 +128,30 @@ namespace GreenMobility_be.Controllers
             try
             {
                 _ctx.Rentals.Add(noleggio);
-                veicolo.VehicleStatusId = 3; // Aggiornato a "Prenotato"
-                _ctx.SaveChanges();
+                veicolo.VehicleStatusId = 3;                   // "Prenotato"
+                await _ctx.SaveChangesAsync();                  // ← async
             }
             catch (DbUpdateException ex)
             {
                 return StatusCode(500, $"Errore durante la prenotazione: {ex.Message}");
             }
 
-            return Ok(new { Messaggio = "Prenotazione effettuata", Codice = codiceMonouso, NoleggioId = noleggio.RentalId });
+            return Ok(new
+            {
+                Messaggio = "Prenotazione effettuata",
+                Codice = codiceMonouso,
+                NoleggioId = noleggio.RentalId
+            });
         }
 
+        // ── SBLOCCA ──────────────────────────────────────────────
         [HttpPost("sbloccaMezzo")]
         [AllowAnonymous]
-        public IActionResult SbloccaMezzo([FromBody] string codice)
+        public async Task<IActionResult> SbloccaMezzo([FromBody] RentalSbloccaDto dto)
         {
-            if (string.IsNullOrWhiteSpace(codice) || codice.Length != 6 || !codice.All(char.IsDigit))
+            if (string.IsNullOrWhiteSpace(dto.RentalCode)
+                || dto.RentalCode.Length != 6
+                || !dto.RentalCode.All(char.IsDigit))
                 return BadRequest("Formato codice non valido. Deve essere di 6 cifre numeriche.");
 
             var authHeader = Request.Headers["Authorization"].FirstOrDefault();
@@ -150,8 +165,8 @@ namespace GreenMobility_be.Controllers
             {
                 var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
                 var jwtToken = handler.ReadJwtToken(tokenString);
-
-                var idString = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                var idString = jwtToken.Claims
+                    .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
                 if (!int.TryParse(idString, out idMezzoDalToken))
                     return Unauthorized("Impossibile estrarre l'ID del mezzo dall'API Key.");
@@ -161,30 +176,31 @@ namespace GreenMobility_be.Controllers
                 return Unauthorized("API Key del mezzo corrotta o non valida.");
             }
 
-            var noleggio = _ctx.Rentals
+            var noleggio = await _ctx.Rentals
                 .Include(r => r.Vehicle)
-                .FirstOrDefault(r => r.RentalCode == codice && r.StartDate == null && r.EndDate == null);
+                .FirstOrDefaultAsync(r =>
+                    r.RentalCode == dto.RentalCode
+                    && r.StartDate == null
+                    && r.EndDate == null);
 
             if (noleggio == null)
                 return BadRequest("Codice inesistente, scaduto o già utilizzato.");
 
             if (noleggio.VehicleId != idMezzoDalToken)
-                return BadRequest("Questo codice di sblocco appartiene a un altro veicolo. Hai sbagliato bici!");
+                return BadRequest("Questo codice di sblocco appartiene a un altro veicolo.");
 
-            if (noleggio.Vehicle != null && noleggio.Vehicle.VehicleStatusId != 3) // Deve essere prenotato per essere sbloccato
+            if (noleggio.Vehicle != null && noleggio.Vehicle.VehicleStatusId != 3)
                 return BadRequest("Il veicolo non si trova nello stato corretto per lo sblocco.");
 
             noleggio.StartDate = DateTimeOffset.UtcNow;
             noleggio.RentalCode = null;
 
             if (noleggio.Vehicle != null)
-            {
-                noleggio.Vehicle.VehicleStatusId = 2; // Stato "In uso"
-            }
+                noleggio.Vehicle.VehicleStatusId = 2;       // "In uso"
 
             try
             {
-                _ctx.SaveChanges();
+                await _ctx.SaveChangesAsync();              // ← async
             }
             catch (DbUpdateException ex)
             {
@@ -199,13 +215,14 @@ namespace GreenMobility_be.Controllers
             });
         }
 
+        // ── TERMINA ──────────────────────────────────────────────
         [HttpPatch("{id}/termina")]
         [Authorize(Roles = Roles.CUSTOMER_ROLE + "," + Roles.ADMIN_ROLE)]
-        public IActionResult Termina(int id, [FromBody] RentalUpdateDto dto)
+        public async Task<IActionResult> Termina([FromRoute] int id, [FromBody] RentalUpdateDto dto)
         {
-            var noleggio = _ctx.Rentals
+            var noleggio = await _ctx.Rentals
                 .Include(r => r.Vehicle)
-                .FirstOrDefault(r => r.RentalId == id && r.EndDate == null);
+                .FirstOrDefaultAsync(r => r.RentalId == id && r.EndDate == null); // ← async
 
             if (noleggio == null)
                 return NotFound("Noleggio non trovato o già terminato.");
@@ -223,20 +240,19 @@ namespace GreenMobility_be.Controllers
 
             var durata = noleggio.EndDate.Value - noleggio.StartDate.Value;
             var minuti = (decimal)durata.TotalMinutes;
-            decimal tariffaAlMinuto = 0.15m;
-            noleggio.TotalCost = Math.Round(minuti * tariffaAlMinuto, 2);
+            noleggio.TotalCost = Math.Round(minuti * 0.15m, 2);
 
             if (noleggio.Vehicle != null)
             {
                 if (dto.BatteryLevel.HasValue)
                     noleggio.Vehicle.BatteryLevel = dto.BatteryLevel.Value;
 
-                noleggio.Vehicle.VehicleStatusId = (noleggio.Vehicle.BatteryLevel < 15) ? 4 : 1; // 4 = Manutenzione, 1 = Disponibile
+                noleggio.Vehicle.VehicleStatusId = (noleggio.Vehicle.BatteryLevel < 15) ? 4 : 1;
             }
 
             try
             {
-                _ctx.SaveChanges();
+                await _ctx.SaveChangesAsync();              // ← async
             }
             catch (DbUpdateException ex)
             {

@@ -4,7 +4,7 @@
     {
         public DateTimeOffset? StartDate { get; set; }
         public DateTimeOffset? EndDate { get; set; } 
-        public int? TotalCost { get; set; }
+        public decimal? TotalCost { get; set; }
         public int? BatteryLevel { get; set; }
     }
 }
