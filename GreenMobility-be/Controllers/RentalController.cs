@@ -10,12 +10,12 @@ namespace GreenMobility_be.Controllers
 {
     [Route("api/noleggi")]
     [ApiController]
-    public class NoleggioController : ControllerBase
+    public class RentalController : ControllerBase
     {
         private readonly GreenMobilityDbContext _ctx;
         private readonly RentalMapper _mapper;
 
-        public NoleggioController(GreenMobilityDbContext ctx, RentalMapper mapper)
+        public RentalController(GreenMobilityDbContext ctx, RentalMapper mapper)
         {
             _ctx = ctx;
             _mapper = mapper;
@@ -42,12 +42,16 @@ namespace GreenMobility_be.Controllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Unauthorized();
-
+            var hasActiveRental = await _ctx.Rentals.AnyAsync(r => r.UserId == userId && r.EndDate == null);
+            if (hasActiveRental)
+            {
+                return BadRequest("Hai già un noleggio attivo. Termina quello prima di prenotarne un altro.");
+            }
             var veicolo = await _ctx.Vehicles
                 .Include(v => v.VehicleStatus)
                 .FirstOrDefaultAsync(v => v.VehicleId == dto.VehicleId && !v.IsDeleted);
 
-            if (veicolo == null || veicolo.VehicleStatus.VehicleStatusId != 1)
+            if (veicolo == null || veicolo.VehicleStatusId != 1)
                 return BadRequest("Veicolo non disponibile.");
 
             string codiceMonouso;
@@ -69,7 +73,7 @@ namespace GreenMobility_be.Controllers
             try
             {
                 _ctx.Rentals.Add(noleggio);
-                veicolo.VehicleStatusId = 3;
+                veicolo.VehicleStatusId = 2;
                 await _ctx.SaveChangesAsync();
             }
             catch (DbUpdateException ex)
@@ -115,12 +119,11 @@ namespace GreenMobility_be.Controllers
             if (rental.VehicleId != physicalVehicle.VehicleId)
                 return BadRequest("Questo codice di sblocco appartiene a un altro veicolo.");
 
-            if (physicalVehicle.VehicleStatusId != 3)
+            if (physicalVehicle.VehicleStatusId == 1 || physicalVehicle.VehicleStatusId == 3)
                 return BadRequest("Il veicolo non si trova nello stato corretto per lo sblocco.");
 
             rental.StartDate = DateTimeOffset.UtcNow;
             rental.RentalCode = null;
-            physicalVehicle.VehicleStatusId = 2;
 
             try
             {
@@ -172,11 +175,14 @@ namespace GreenMobility_be.Controllers
             var minutes = (decimal)duration.TotalMinutes;
 
             rental.TotalCost = Math.Round(Math.Max(1, minutes) * 0.20m, 2);
-             
-            if (rental.Vehicle != null && dto.BatteryLevel.HasValue)
+
+            if (rental.Vehicle != null)
             {
-                rental.Vehicle.BatteryLevel = dto.BatteryLevel.Value;
-                rental.Vehicle.VehicleStatusId = (rental.Vehicle.BatteryLevel < 15) ? 4 : 1;
+                rental.Vehicle.VehicleStatusId = 1;
+                if (dto.BatteryLevel.HasValue)
+                {
+                    rental.Vehicle.BatteryLevel = dto.BatteryLevel.Value;
+                }
             }
 
             try

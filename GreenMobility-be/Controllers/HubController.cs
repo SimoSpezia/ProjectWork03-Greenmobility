@@ -33,6 +33,7 @@ namespace GreenMobility_be.Controllers
             var hub = await _ctx.Hubs
                 .Where(h => !h.IsDeleted)
                 .Include(h => h.Vehicles.Where(v => !v.IsDeleted && v.VehicleStatus.Status == "Disponibile"))
+                .ThenInclude(v => v.VehicleStatus)
                 .SingleOrDefaultAsync(h => h.HubId == id);
 
             if (hub == null)
@@ -66,6 +67,28 @@ namespace GreenMobility_be.Controllers
                 new { id = hub.HubId },
                 _mapper.MapEntityToDto(hub)
             );
+        }
+
+        [HttpPatch]
+        [Authorize(Roles = Roles.ADMIN_ROLE)]
+        [Route("{id}/maintenance-battery")]
+        public async Task<IActionResult> SetVehicleInManutenzione([FromRoute] int id)
+        {
+            var hubExists = await _ctx.Hubs.AnyAsync(h => h.HubId == id && !h.IsDeleted);
+            int vehiclesSet = 0;
+            if (!hubExists) return NotFound($"Hub con id {id} non trovato o eliminato");
+            try
+            {
+                vehiclesSet = await _ctx.Database.ExecuteSqlRawAsync("EXEC [dbo].[sp_set_vehiclestatus_manutenzione] @HubId = {0}", id);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Errore: {ex.Message}");
+            }
+            return Ok(new
+            {
+                Message = $"{vehiclesSet} veicoli sono stati impostati in manutenzione nell'hub {id}.",
+            });
         }
 
         [HttpPatch("{id}")]
