@@ -1,7 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace GreenMobility_be.Data
 {
+    [Index(nameof(UIC), IsUnique = true)]
     public class Vehicle
     {
         public int VehicleId { get; set; }

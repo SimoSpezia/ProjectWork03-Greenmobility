@@ -30,6 +30,7 @@ namespace GreenMobility_be.Data
             modelBuilder.Entity<IdentityUserRole<string>>().ToTable("UserRole");
             modelBuilder.Entity<User>().ToTable("Users");
             modelBuilder.Entity<IdentityUserToken<string>>().ToTable("UserTokens");
+
         }
         public DbSet<Vehicle> Vehicles { get; set; } = null!;
         public DbSet<VehicleType> VehicleTypes { get; set; } = null!;

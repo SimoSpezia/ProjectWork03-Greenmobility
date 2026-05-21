@@ -19,15 +19,5 @@ namespace GreenMobility_be.Mapper
                 RentalCode = r.RentalCode
             };
         }
-
-        public Rental MapDtoToEntity(RentalCreateDto dto)
-        {
-            if (dto == null) return null!;
-            return new Rental
-            {
-                UserId = dto.UserId.ToString(),
-                VehicleId = dto.VehicleId
-            };
-        }
     }
 }

@@ -52,13 +52,12 @@ namespace GreenMobility_be.Controllers
         public async Task<IActionResult> Login(LoginDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
-
-            if (user != null && await _userManager.CheckPasswordAsync(user, dto.Password))
+            if(user == null || user.IsDeleted)
             {
-                if (user.IsDeleted)
-                {
-                    return BadRequest("Utente non trovato");
-                }
+                return BadRequest("Utente non trovato");
+            }
+            if (await _userManager.CheckPasswordAsync(user, dto.Password))
+            {
                 var roles = await _userManager.GetRolesAsync(user);
                 var authClaims = new List<Claim>
                     {
@@ -93,7 +92,7 @@ namespace GreenMobility_be.Controllers
             var token = new JwtSecurityToken(
                 issuer: _configuration["JWT:ValidIssuer"],
                 audience: _configuration["JWT:ValidAudience"],
-                expires: DateTime.Now.AddHours(4),
+                expires: DateTime.UtcNow.AddHours(4),
                 claims: authClaims,
                 signingCredentials: new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256)
                 );
