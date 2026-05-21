@@ -1,4 +1,4 @@
-﻿using GreenMobility_be.Data;
+using GreenMobility_be.Data;
 using GreenMobility_be.Dto;
 using GreenMobility_be.Mapper;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GreenMobility_be.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/vehicles")]
     [ApiController]
     public class VehicleController(GreenMobilityDbContext ctx, VehicleMapper mapper) : ControllerBase
     {
@@ -21,18 +21,23 @@ namespace GreenMobility_be.Controllers
         /// <summary>
         /// Creazione di un veicolo, possibile solo per l'admin.
         /// </summary>
-        /// <param name="dto"></param>
-        /// <returns></returns>
+        /// <param name="dto">Dati del nuovo veicolo: tipo (1=E-Bike, 2=Monopattino) e ID hub di appartenenza.</param>
         [HttpPost]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
         public async Task<IActionResult> CreateVehicle(VehicleCreateDto dto)
         {
-            var hubExists = await _ctx.Hubs.AnyAsync(h => h.HubId == dto.HubId);
+            var hub = await _ctx.Hubs.FirstOrDefaultAsync(h => h.HubId == dto.HubId);
             var typeExists = await _ctx.VehicleTypes.AnyAsync(t => t.VehicleTypeId == dto.VehicleTypeId);
 
-            if (!hubExists || !typeExists)
+            if (hub == null || !typeExists)
             {
                 return BadRequest(new { Message = "Uno o più ID specificati (Hub o Tipo) non sono validi." });
+            }
+
+            var currentVehicleCount = await _ctx.Vehicles.CountAsync(v => v.HubId == dto.HubId && !v.IsDeleted);
+            if (currentVehicleCount >= hub.MaximumCapacity)
+            {
+                return BadRequest(new { Message = "L'Hub selezionato ha già raggiunto la capacità massima." });
             }
 
             string newUIC = dto.VehicleTypeId switch
@@ -81,10 +86,9 @@ namespace GreenMobility_be.Controllers
         /// <summary>
         /// Lista di tutti i veicoli, possibile solo per l'admin.
         /// </summary>
-        /// <returns></returns>
         [HttpGet]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
-        public async Task<IActionResult> GetVehicles()
+        public async Task<IActionResult> GetAllVehicles()
         {
             var entities = await _ctx.Vehicles
             .Where(v => !v.IsDeleted)
@@ -102,13 +106,12 @@ namespace GreenMobility_be.Controllers
         /// <summary>
         /// Modifica di un veicolo, possibile solo per l'admin.
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="dto"></param>
-        /// <returns></returns>
+        /// <param name="id">ID del veicolo da modificare.</param>
+        /// <param name="dto">Campi da aggiornare: hubId, tipoVeicolo, stato e/o livello batteria (tutti opzionali).</param>
         [HttpPatch]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
         [Route("{id}")]
-        public async Task<IActionResult> UpdateVehicle(int id, VehicleUpdateDto dto)
+        public async Task<IActionResult> UpdateVehicleById(int id, VehicleUpdateDto dto)
         {
             var vehicle = await _ctx.Vehicles.FindAsync(id);
             if (vehicle == null)
@@ -118,9 +121,18 @@ namespace GreenMobility_be.Controllers
 
             if (dto.HubId.HasValue && dto.HubId.Value > 0)
             {
-                var hubExists = await _ctx.Hubs.AnyAsync(h => h.HubId == dto.HubId.Value);
-                if (!hubExists)
+                var hub = await _ctx.Hubs.FirstOrDefaultAsync(h => h.HubId == dto.HubId.Value);
+                if (hub == null)
                     return BadRequest(new { Message = "L'Hub specificato non è valido." });
+
+                if (vehicle.HubId != dto.HubId.Value)
+                {
+                    var currentVehicleCount = await _ctx.Vehicles.CountAsync(v => v.HubId == dto.HubId.Value && !v.IsDeleted);
+                    if (currentVehicleCount >= hub.MaximumCapacity)
+                    {
+                        return BadRequest(new { Message = "L'Hub selezionato ha già raggiunto la capacità massima." });
+                    }
+                }
 
                 vehicle.HubId = dto.HubId.Value;
             }
@@ -167,12 +179,11 @@ namespace GreenMobility_be.Controllers
         /// <summary>
         /// Sospensione di un veicolo, possibile solo per l'admin.
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
+        /// <param name="id">ID del veicolo da sospendere.</param>
         [HttpPatch]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
-        [Route("{id}/softdelete")]
-        public async Task<IActionResult> SoftDeleteVehicle(int id)
+        [Route("{id}/soft-delete")]
+        public async Task<IActionResult> SoftDeleteVehicleById(int id)
         {
             var vehicle = await _ctx.Vehicles.FindAsync(id);
             if (vehicle == null)
@@ -195,11 +206,10 @@ namespace GreenMobility_be.Controllers
         /// <summary>
         /// Lista di veicoli per l'operatore: mostra solo i veicoli in manutenzione o con batteria scarica.
         /// </summary>
-        /// <returns></returns>
         [HttpGet]
         [Authorize(Roles = Roles.OPERATOR_ROLE)]
         [Route("maintenance-list")]
-        public async Task<IActionResult> GetVehiclesStatus()
+        public async Task<IActionResult> GetAllVehiclesInMaintenance()
         {
             int lowBatteryThreshold = 20;
 
@@ -219,14 +229,13 @@ namespace GreenMobility_be.Controllers
         /// <summary>
         /// Modifica stato veicolo e/o livello batteria, possibile solo per l'operatore.
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="batteryLevel"></param>
-        /// <param name="statusId"></param>
-        /// <returns></returns>
+        /// <param name="id">ID del veicolo da aggiornare.</param>
+        /// <param name="batteryLevel">Nuovo livello batteria (0–100). Opzionale.</param>
+        /// <param name="statusId">ID del nuovo stato del veicolo. Opzionale.</param>
         [HttpPatch]
         [Authorize(Roles = Roles.OPERATOR_ROLE)]
         [Route("{id}/maintain-vehicle")]
-        public async Task<IActionResult> MaintainVehicle(int id, int? batteryLevel, int? statusId)
+        public async Task<IActionResult> MaintainVehicleById(int id, int? batteryLevel, int? statusId)
         {
             if (!batteryLevel.HasValue && !statusId.HasValue)
             {
@@ -270,11 +279,10 @@ namespace GreenMobility_be.Controllers
         /// Mostra la lista di tutti gli stati possibili dei veicoli. 
         /// Serve al frontend per popolare le tendine di cambio stato rapido.
         /// </summary>
-        /// <returns></returns>
         [HttpGet]
         [Authorize(Roles = Roles.OPERATOR_ROLE)]
         [Route("statuses-list")]
-        public async Task<IActionResult> GetVehicleStatuses()
+        public async Task<IActionResult> GetAllVehicleStatuses()
         {
             var statuses = await _ctx.VehicleStatuses
                 .Select(s => new { s.VehicleStatusId, s.Status })
@@ -289,8 +297,7 @@ namespace GreenMobility_be.Controllers
         /// <summary>
         /// Dettaglio di un veicolo, possibile sia per l'admin che per l'operatore.
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
+        /// <param name="id">ID del veicolo da recuperare.</param>
         [HttpGet]
         [Authorize]
         [Route("{id}")]

@@ -10,21 +10,16 @@ namespace GreenMobility_be.Controllers
 {
     [Route("api/noleggi")]
     [ApiController]
-    public class RentalController : ControllerBase
+    public class RentalController(GreenMobilityDbContext ctx, RentalMapper mapper) : ControllerBase
     {
-        private readonly GreenMobilityDbContext _ctx;
-        private readonly RentalMapper _mapper;
+        private readonly GreenMobilityDbContext _ctx = ctx;
+        private readonly RentalMapper _mapper = mapper;
 
-        public RentalController(GreenMobilityDbContext ctx, RentalMapper mapper)
-        {
-            _ctx = ctx;
-            _mapper = mapper;
-        }
 
-        // API GET che recupera la lista completa di tutti i noleggi
+        /// <summary>Restituisce la lista completa di tutti i noleggi. Solo admin.</summary>
         [HttpGet]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAllRentals()
         {
             var rentals = await _ctx.Rentals
                 .Include(r => r.Vehicle)
@@ -35,10 +30,11 @@ namespace GreenMobility_be.Controllers
             return Ok(rentals.ConvertAll(_mapper.MapEntityToDto));
         }
 
-        // API POST che permette a un utente di prenotare un veicolo
-        [HttpPost("ReserveVehicle")]
+        /// <summary>Prenota un veicolo disponibile e genera un codice monouso di sblocco. Solo clienti.</summary>
+        /// <param name="dto">ID del veicolo da prenotare.</param>
+        [HttpPost("reserve-vehicle")]
         [Authorize(Roles = Roles.CUSTOMER_ROLE)]
-        public async Task<IActionResult> Reserve([FromBody] RentalCreateDto dto)
+        public async Task<IActionResult> ReserveVehicle([FromBody] RentalCreateDto dto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Unauthorized();
@@ -89,8 +85,9 @@ namespace GreenMobility_be.Controllers
             });
         }
 
-        // API POST che sblocca il veicolo prenotato validando il codice monouso
-        [HttpPost("UnlockVehicle")]
+        /// <summary>Sblocca il veicolo validando il codice monouso. Richiede l'API Key del veicolo nell'header.</summary>
+        /// <param name="dto">Codice monouso a 6 cifre generato alla prenotazione.</param>
+        [HttpPost("unlock-vehicle")]
         [AllowAnonymous]
         public async Task<IActionResult> UnlockVehicle([FromBody] RentalUnlockDto dto)
         {
@@ -142,8 +139,9 @@ namespace GreenMobility_be.Controllers
             });
         }
 
-        // API PATCH che termina il noleggio ed effettua il calcolo della spesa e il rilascio del veicolo
-        [HttpPatch("endrental")]
+        /// <summary>Termina il noleggio attivo, calcola il costo (0,20€/min) e rilascia il veicolo. Richiede l'API Key del veicolo nell'header.</summary>
+        /// <param name="dto">Livello batteria residuo del veicolo al termine del noleggio.</param>
+        [HttpPatch("end-rental")]
         [AllowAnonymous]
         public async Task<IActionResult> EndRental([FromBody] RentalUpdateDto dto)
         {

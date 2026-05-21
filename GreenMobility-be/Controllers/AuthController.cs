@@ -1,4 +1,4 @@
-﻿using GreenMobility_be.Data;
+using GreenMobility_be.Data;
 using GreenMobility_be.Dto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -19,10 +19,11 @@ namespace GreenMobility_be.Controllers
         private readonly RoleManager<IdentityRole> _roleManager = roleManager;
         private readonly IConfiguration _configuration = configuration;
 
-        // Registra un nuovo utente con ruolo cliente
+        /// <summary>Registra un nuovo utente assegnandogli il ruolo cliente.</summary>
+        /// <param name="dto">Dati di registrazione: nome, cognome, email e password.</param>
         [HttpPost]
         [Route("register")]
-        public async Task<IActionResult> Register(RegisterDto dto)
+        public async Task<IActionResult> RegisterUser(RegisterDto dto)
         {
             var userExist = await _userManager.FindByEmailAsync(dto.Email);
             if (userExist != null)
@@ -46,10 +47,11 @@ namespace GreenMobility_be.Controllers
             return Created();
         }
 
-        // Effettua il login e restituisce un token JWT
+        /// <summary>Effettua il login e restituisce un token JWT valido 4 ore.</summary>
+        /// <param name="dto">Credenziali di accesso: email e password.</param>
         [HttpPost]
-        [Route("Login")]
-        public async Task<IActionResult> Login(LoginDto dto)
+        [Route("login")]
+        public async Task<IActionResult> LoginUser(LoginDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
             if(user == null || user.IsDeleted)

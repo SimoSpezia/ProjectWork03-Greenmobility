@@ -1,4 +1,4 @@
-﻿using GreenMobility_be.Data;
+using GreenMobility_be.Data;
 using GreenMobility_be.Dto;
 using GreenMobility_be.Mapper;
 using Microsoft.AspNetCore.Authorization;
@@ -15,9 +15,10 @@ namespace GreenMobility_be.Controllers
         private readonly GreenMobilityDbContext _ctx = ctx;
         private readonly HubMapper _mapper = mapper;
 
+        /// <summary>Restituisce la lista di tutti gli hub non eliminati.</summary>
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAllHubs()
         {
             var hubs = await _ctx.Hubs
                        .Where(h => !h.IsDeleted)
@@ -26,9 +27,11 @@ namespace GreenMobility_be.Controllers
             return Ok(hubs.ConvertAll(_mapper.MapEntityToDto));
         }
 
+        /// <summary>Restituisce il dettaglio di un hub con i veicoli disponibili.</summary>
+        /// <param name="id">ID dell'hub da recuperare.</param>
         [HttpGet("{id}")]
         [Authorize]
-        public async Task<IActionResult> GetById([FromRoute] int id)
+        public async Task<IActionResult> GetHubById([FromRoute] int id)
         {
             var hub = await _ctx.Hubs
                 .Where(h => !h.IsDeleted)
@@ -42,9 +45,11 @@ namespace GreenMobility_be.Controllers
             return Ok(_mapper.MapEntityToDto(hub));
         }
 
+        /// <summary>Crea un nuovo hub. Solo admin.</summary>
+        /// <param name="dto">Dati del nuovo hub (nome, indirizzo, città, capacità massima).</param>
         [HttpPost]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
-        public async Task<IActionResult> Create([FromBody] HubCreateDto dto)
+        public async Task<IActionResult> CreateHub([FromBody] HubCreateDto dto)
         {
             if (await _ctx.Hubs.AnyAsync(h => h.Name == dto.Name && !h.IsDeleted))
                 return BadRequest($"Esiste già un hub con il nome '{dto.Name}'");
@@ -63,16 +68,18 @@ namespace GreenMobility_be.Controllers
             }
 
             return CreatedAtAction(
-                nameof(GetById),
+                nameof(GetHubById),
                 new { id = hub.HubId },
                 _mapper.MapEntityToDto(hub)
             );
         }
 
+        /// <summary>Imposta in manutenzione tutti i veicoli con batteria scarica nell'hub tramite stored procedure. Solo admin.</summary>
+        /// <param name="id">ID dell'hub su cui eseguire l'operazione.</param>
         [HttpPatch]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
         [Route("{id}/maintenance-battery")]
-        public async Task<IActionResult> SetVehicleInManutenzione([FromRoute] int id)
+        public async Task<IActionResult> SetMaintenanceBatteryByHubId([FromRoute] int id)
         {
             var hubExists = await _ctx.Hubs.AnyAsync(h => h.HubId == id && !h.IsDeleted);
             int vehiclesSet = 0;
@@ -91,9 +98,12 @@ namespace GreenMobility_be.Controllers
             });
         }
 
+        /// <summary>Aggiorna i dati di un hub esistente. Solo admin.</summary>
+        /// <param name="id">ID dell'hub da modificare.</param>
+        /// <param name="dto">Campi da aggiornare (nome, indirizzo, città, capacità massima).</param>
         [HttpPatch("{id}")]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
-        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] HubUpdateDto dto)
+        public async Task<IActionResult> UpdateHubById([FromRoute] int id, [FromBody] HubUpdateDto dto)
         {
             var hub = await _ctx.Hubs.FirstOrDefaultAsync(h => h.HubId == id && !h.IsDeleted);
             if (hub == null)
@@ -116,9 +126,11 @@ namespace GreenMobility_be.Controllers
             return Ok(_mapper.MapEntityToDto(hub));
         }
 
+        /// <summary>Esegue il soft delete di un hub (non viene cancellato fisicamente). Solo admin.</summary>
+        /// <param name="id">ID dell'hub da eliminare.</param>
         [HttpDelete("{id}")]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
-        public async Task<IActionResult> Delete([FromRoute] int id)
+        public async Task<IActionResult> DeleteHubById([FromRoute] int id)
         {
             var hub = await _ctx.Hubs.FirstOrDefaultAsync(h => h.HubId == id && !h.IsDeleted);
             if (hub == null)
