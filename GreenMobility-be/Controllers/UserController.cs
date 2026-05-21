@@ -1,4 +1,4 @@
-﻿using GreenMobility_be.Data;
+using GreenMobility_be.Data;
 using GreenMobility_be.Dto;
 using GreenMobility_be.Mapper;
 using Microsoft.AspNetCore.Authorization;
@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GreenMobility_be.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/users")]
     [ApiController]
     public class UserController(UserManager<User> userManager, RoleManager<IdentityRole> roleManager, UserMapper mapper) : ControllerBase
     {
@@ -20,7 +20,6 @@ namespace GreenMobility_be.Controllers
         /// <summary>
         /// Lista di tutti gli utenti nel sistema. Solo per admin.
         /// </summary>
-        /// <returns></returns>
         [HttpGet]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
         public async Task<IActionResult> GetAllUsers()
@@ -43,8 +42,7 @@ namespace GreenMobility_be.Controllers
         /// <summary>
         /// Mostra il dettaglio di un singolo utente tramite il suo ID. Solo per admin.
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
+        /// <param name="id">ID (stringa) dell'utente da recuperare.</param>
         [HttpGet]
         [Route("{id}")]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
@@ -65,8 +63,7 @@ namespace GreenMobility_be.Controllers
         /// <summary>
         /// Creazione manuale di un nuovo utente. Solo per admin.
         /// </summary>
-        /// <param name="dto"></param>
-        /// <returns></returns>
+        /// <param name="dto">Dati del nuovo utente: nome, cognome, email, password e ruolo.</param>
         [HttpPost]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
         public async Task<IActionResult> CreateUser(UserCreateDto dto)
@@ -108,13 +105,12 @@ namespace GreenMobility_be.Controllers
         /// <summary>
         /// Modifica dei dati di un utente esistente. Solo per admin.
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="dto"></param>
-        /// <returns></returns>
+        /// <param name="id">ID (stringa) dell'utente da modificare.</param>
+        /// <param name="dto">Campi da aggiornare: nome, cognome, email (tutti opzionali).</param>
         [HttpPatch]
         [Route("{id}")]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
-        public async Task<IActionResult> UpdateUser([FromRoute] string id, UserUpdateDto dto)
+        public async Task<IActionResult> UpdateUserById([FromRoute] string id, UserUpdateDto dto)
         {
             var user = await _userManager.FindByIdAsync(id);
             
@@ -149,12 +145,11 @@ namespace GreenMobility_be.Controllers
         /// <summary>
         /// Sospensione di un utente (soft delete). Solo per admin.
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
+        /// <param name="id">ID (stringa) dell'utente da sospendere.</param>
         [HttpPatch]
         [Route("{id}/suspend")]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
-        public async Task<IActionResult> SuspendUser([FromRoute] string id)
+        public async Task<IActionResult> SuspendUserById([FromRoute] string id)
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
