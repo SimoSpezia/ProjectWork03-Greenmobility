@@ -1,4 +1,5 @@
-﻿using GreenMobility_be.Data;
+﻿using Azure.Identity;
+using GreenMobility_be.Data;
 using GreenMobility_be.Mapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -7,6 +8,12 @@ using Scalar.AspNetCore;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Aggiunta di Azure Key Vault come provider di configurazione
+var keyVaultEndpoint = new Uri(builder.Configuration["KeyVault:Azure:Endpoint"]);
+
+// Utilizza Azure Managed Identity
+builder.Configuration.AddAzureKeyVault(keyVaultEndpoint, new DefaultAzureCredential());
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -40,6 +47,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<UserMapper>();
 builder.Services.AddScoped<VehicleMapper>();
 builder.Services.AddScoped<HubMapper>();
+builder.Services.AddScoped<RentalMapper>();
 
 var app = builder.Build();
 
@@ -93,10 +101,4 @@ using (var scope = app.Services.CreateScope())
         }
     }
 }
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
 app.Run();

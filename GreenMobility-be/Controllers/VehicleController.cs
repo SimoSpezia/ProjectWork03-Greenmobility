@@ -35,11 +35,6 @@ namespace GreenMobility_be.Controllers
                 return BadRequest(new { Message = "Uno o più ID specificati (Hub o Tipo) non sono validi." });
             }
 
-            if (dto.VehicleTypeId != 1 && dto.VehicleTypeId != 2)
-            {
-                return BadRequest(new { Message = "Tipologia veicolo non valida. Sono ammessi solo i valori 1 (E-Bike) o 2 (Monopattino)." });
-            }
-
             string newUIC = dto.VehicleTypeId switch
             {
                 1 => "B" + (await _ctx.Vehicles.CountAsync(v => v.VehicleTypeId == 1) + 1).ToString(),
@@ -57,7 +52,14 @@ namespace GreenMobility_be.Controllers
             };
 
             _ctx.Vehicles.Add(newVehicle);
-            await _ctx.SaveChangesAsync();
+            try
+            {
+                await _ctx.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, $"Errore durante la creazione del veicolo: {ex.Message}");
+            }
 
             newVehicle.VehicleType = await _ctx.VehicleTypes.FindAsync(newVehicle.VehicleTypeId);
             newVehicle.VehicleStatus = await _ctx.VehicleStatuses.FindAsync(newVehicle.VehicleStatusId);
@@ -85,6 +87,7 @@ namespace GreenMobility_be.Controllers
         public async Task<IActionResult> GetVehicles()
         {
             var entities = await _ctx.Vehicles
+            .Where(v => !v.IsDeleted)
             .Include(v => v.VehicleType)
             .Include(v => v.VehicleStatus)
             .Include(v => v.Hub)
@@ -102,7 +105,7 @@ namespace GreenMobility_be.Controllers
         /// <param name="id"></param>
         /// <param name="dto"></param>
         /// <returns></returns>
-        [HttpPut]
+        [HttpPatch]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
         [Route("{id}")]
         public async Task<IActionResult> UpdateVehicle(int id, VehicleUpdateDto dto)
@@ -294,6 +297,7 @@ namespace GreenMobility_be.Controllers
         public async Task<IActionResult> GetVehicleById(int id)
         {
             var vehicle = await _ctx.Vehicles
+            .Where(v => !v.IsDeleted)
             .Include(v => v.VehicleType)
             .Include(v => v.VehicleStatus)
             .Include(v => v.Hub)

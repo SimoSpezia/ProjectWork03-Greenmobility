@@ -51,7 +51,7 @@ namespace GreenMobility_be.Controllers
         public async Task<IActionResult> GetUserById([FromRoute] string id)
         {
             var user = await _userManager.FindByIdAsync(id);
-            if (user == null)
+            if (user == null || user.IsDeleted)
                 return NotFound(new { Message = $"Utente con ID '{id}' non trovato." });
 
             var roles = await _userManager.GetRolesAsync(user);
@@ -111,7 +111,7 @@ namespace GreenMobility_be.Controllers
         /// <param name="id"></param>
         /// <param name="dto"></param>
         /// <returns></returns>
-        [HttpPut]
+        [HttpPatch]
         [Route("{id}")]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
         public async Task<IActionResult> UpdateUser([FromRoute] string id, UserUpdateDto dto)

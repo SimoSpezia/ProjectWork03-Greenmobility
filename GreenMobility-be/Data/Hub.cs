@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace GreenMobility_be.Data
 {
@@ -13,6 +14,6 @@ namespace GreenMobility_be.Data
         public required string City { get; set; }
         public int MaximumCapacity { get; set; } 
         public List<Vehicle>? Vehicles { get; set; }
-        public bool IsDeleted { get; set; } = false;
+        public bool IsDeleted { get; set; }=false;
     }
 }
