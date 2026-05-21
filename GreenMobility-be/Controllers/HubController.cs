@@ -130,7 +130,7 @@ namespace GreenMobility_be.Controllers
         /// <param name="id">ID dell'hub da eliminare.</param>
         [HttpDelete("{id}")]
         [Authorize(Roles = Roles.ADMIN_ROLE)]
-        public async Task<IActionResult> DeleteHubById([FromRoute] int id)
+        public async Task<IActionResult> SoftDeleteHubById([FromRoute] int id)
         {
             var hub = await _ctx.Hubs.FirstOrDefaultAsync(h => h.HubId == id && !h.IsDeleted);
             if (hub == null)

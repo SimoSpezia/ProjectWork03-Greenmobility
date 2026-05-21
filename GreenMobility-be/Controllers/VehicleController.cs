@@ -192,7 +192,11 @@ namespace GreenMobility_be.Controllers
             }
             if (vehicle.IsDeleted)
             {
-                return BadRequest(new { Message = $"Il veicolo con ID '{id}' è già sospeso." });
+                return BadRequest(new { Message = $"Veicolo con ID '{id}' già sospeso." });
+            }
+            if(vehicle.VehicleStatusId == 2)
+            {
+                return BadRequest(new { Message = $"Veicolo con ID '{id}' attualmente in noleggio. Impossibile sospendere." });
             }
 
             vehicle.IsDeleted = true;
