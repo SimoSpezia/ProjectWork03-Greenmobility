@@ -51,11 +51,25 @@ builder.Services.AddScoped<RentalMapper>();
 
 var app = builder.Build();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("LocalDevCors", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
+    app.UseCors("LocalDevCors");
 }
+
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
