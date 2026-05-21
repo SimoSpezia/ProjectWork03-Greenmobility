@@ -49,13 +49,27 @@ builder.Services.AddScoped<VehicleMapper>();
 builder.Services.AddScoped<HubMapper>();
 builder.Services.AddScoped<RentalMapper>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("LocalDevCors", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
+    app.UseCors("LocalDevCors");
 }
+
 
 app.UseHttpsRedirection();
 app.UseAuthentication();

@@ -64,7 +64,6 @@ namespace GreenMobility_be.Mapper
                 Address = dto.Address,
                 City = dto.City,
                 MaximumCapacity = dto.MaximumCapacity,
-                Vehicles = null,
             };
         }
     }
