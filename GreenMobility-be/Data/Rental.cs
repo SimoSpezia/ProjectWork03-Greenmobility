@@ -4,7 +4,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GreenMobility_be.Data
 {
-    [Index(nameof(RentalCode), IsUnique = true)]
     public class Rental
     {
         public int RentalId { get; set; }

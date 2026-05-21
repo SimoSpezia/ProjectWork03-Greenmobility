@@ -49,8 +49,6 @@ builder.Services.AddScoped<VehicleMapper>();
 builder.Services.AddScoped<HubMapper>();
 builder.Services.AddScoped<RentalMapper>();
 
-var app = builder.Build();
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("LocalDevCors", policy =>
@@ -62,6 +60,8 @@ builder.Services.AddCors(options =>
     });
 });
 
+
+var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
