@@ -109,10 +109,31 @@ namespace GreenMobility_be.Controllers
             if (hub == null)
                 return NotFound($"Hub con id {id} non trovato");
 
-            if (dto.Name != null) hub.Name = dto.Name;
-            if (dto.Address != null) hub.Address = dto.Address;
-            if (dto.City != null) hub.City = dto.City;
-            if (dto.MaximumCapacity.HasValue && dto.MaximumCapacity.Value > 0) hub.MaximumCapacity = dto.MaximumCapacity.Value;
+            // 1. Controllo validità Nome Univoco
+            if (!string.IsNullOrEmpty(dto.Name) && dto.Name != hub.Name)
+            {
+                if (await _ctx.Hubs.AnyAsync(h => h.Name == dto.Name && !h.IsDeleted))
+                    return BadRequest($"Esiste già un hub con il nome '{dto.Name}'");
+                hub.Name = dto.Name;
+            }
+
+            if (!string.IsNullOrEmpty(dto.Address)) hub.Address = dto.Address;
+            if (!string.IsNullOrEmpty(dto.City)) hub.City = dto.City;
+
+            // 2. Controllo logico sulla Capacità Massima
+            if (dto.MaximumCapacity.HasValue)
+            {
+                if (dto.MaximumCapacity.Value <= 0)
+                    return BadRequest("La capacità massima deve essere un valore positivo.");
+
+                int currentVehicleCount = await _ctx.Vehicles.CountAsync(v => v.HubId == id && !v.IsDeleted);
+                if (dto.MaximumCapacity.Value < currentVehicleCount)
+                {
+                    return BadRequest($"La capacità massima ({dto.MaximumCapacity.Value}) non può essere inferiore al numero attuale di veicoli presenti in questo hub ({currentVehicleCount}).");
+                }
+
+                hub.MaximumCapacity = dto.MaximumCapacity.Value;
+            }
 
             try
             {
