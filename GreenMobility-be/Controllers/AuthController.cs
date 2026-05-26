@@ -22,8 +22,8 @@ namespace GreenMobility_be.Controllers
         /// <summary>Registra un nuovo utente assegnandogli il ruolo cliente.</summary>
         /// <param name="dto">Dati di registrazione: nome, cognome, email e password.</param>
         [HttpPost]
-        [Route("register")]
-        public async Task<IActionResult> RegisterUser(RegisterDto dto)
+        [Route("Register")]
+        public async Task<IActionResult> Register(RegisterDto dto)
         {
             var userExist = await _userManager.FindByEmailAsync(dto.Email);
             if (userExist != null)
@@ -50,8 +50,8 @@ namespace GreenMobility_be.Controllers
         /// <summary>Effettua il login e restituisce un token JWT valido 4 ore.</summary>
         /// <param name="dto">Credenziali di accesso: email e password.</param>
         [HttpPost]
-        [Route("login")]
-        public async Task<IActionResult> LoginUser(LoginDto dto)
+        [Route("Login")]
+        public async Task<IActionResult> Login(LoginDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
             if(user == null || user.IsDeleted)
@@ -74,8 +74,10 @@ namespace GreenMobility_be.Controllers
                 var token = GetToken(authClaims);
                 return Ok(new
                 {
-                    Token = new JwtSecurityTokenHandler().WriteToken(token),
-                    expiration = token.ValidTo
+                    token = new JwtSecurityTokenHandler().WriteToken(token),
+                    expiration = token.ValidTo,
+                    roles
+                    
                 });
             }
             else

@@ -24,6 +24,8 @@ namespace GreenMobility_be.Mapper
                     BatteryLevel = v.BatteryLevel,
                     VehicleTypeId = v.VehicleTypeId,
                     VehicleStatusId = v.VehicleStatusId,
+                    VehicleTypeName = v.VehicleType?.Type,
+                    VehicleStatusName = v.VehicleStatus?.Status,
                     HubId = v.HubId
                 }).ToList()
             };
