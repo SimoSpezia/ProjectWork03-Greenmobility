@@ -37,6 +37,8 @@ namespace GreenMobility_be.Controllers
                 .Where(h => !h.IsDeleted)
                 .Include(h => h.Vehicles.Where(v => !v.IsDeleted && v.VehicleStatus.Status == "Disponibile"))
                 .ThenInclude(v => v.VehicleStatus)
+                .Include(h => h.Vehicles.Where(v => !v.IsDeleted && v.VehicleStatus.Status == "Disponibile"))
+                .ThenInclude(v => v.VehicleType)
                 .SingleOrDefaultAsync(h => h.HubId == id);
 
             if (hub == null)
