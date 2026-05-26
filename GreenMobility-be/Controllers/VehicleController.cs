@@ -279,23 +279,6 @@ namespace GreenMobility_be.Controllers
         }
 
 
-        /// <summary>
-        /// Mostra la lista di tutti gli stati possibili dei veicoli. 
-        /// Serve al frontend per popolare le tendine di cambio stato rapido.
-        /// </summary>
-        [HttpGet]
-        [Authorize(Roles = Roles.OPERATOR_ROLE)]
-        [Route("statuses-list")]
-        public async Task<IActionResult> GetAllVehicleStatuses()
-        {
-            var statuses = await _ctx.VehicleStatuses
-                .Select(s => new { s.VehicleStatusId, s.Status })
-                .ToListAsync();
-
-            return Ok(statuses);
-        }
-
-
         // FUNZIONALITÀ ADMIN E OPERATORE
 
         /// <summary>
