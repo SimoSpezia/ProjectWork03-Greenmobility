@@ -94,7 +94,7 @@ namespace GreenMobility_be.Controllers
             .Where(v => !v.IsDeleted)
             .Include(v => v.VehicleType)
             .Include(v => v.VehicleStatus)
-            .Include(v => v.Hub)
+            .Include(v => v.Hub).Where(h=>!h.IsDeleted)
             .ToListAsync();
 
             var dtos = entities.ConvertAll(_mapper.MapEntityToDto);
