@@ -60,7 +60,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -77,7 +76,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 
-// Seeding iniziale di Ruoli e Utente Admin
+// Seeding iniziale di Ruoli
 
 using (var scope = app.Services.CreateScope())
 {
@@ -91,27 +90,6 @@ using (var scope = app.Services.CreateScope())
         if (!await roleManager.RoleExistsAsync(roleName))
         {
             await roleManager.CreateAsync(new IdentityRole(roleName));
-        }
-    }
-    // Creazione utente admin se non esiste già, da rimuovere in produzione
-    var adminEmail = "admin@mail.it";
-    var adminUser = await userManager.FindByEmailAsync(adminEmail);
-
-    if (adminUser == null)
-    {
-        var newAdmin = new User
-        {
-            UserName = adminEmail,
-            Name = "admin",
-            Surname = "admin",
-            Email = adminEmail,
-            EmailConfirmed = true
-        };
-
-        var createAdmin = await userManager.CreateAsync(newAdmin, "MiaoMiao_321");
-        if (createAdmin.Succeeded)
-        {
-            await userManager.AddToRoleAsync(newAdmin, Roles.ADMIN_ROLE);
         }
     }
 }
