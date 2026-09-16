@@ -1,0 +1,77 @@
+<app-header [showAdminNav]="true"></app-header>
+
+<div class="container pt-0 mt-0">
+  <h2 class="mb-1 mt-0" style="line-height: 1;">Storico Noleggi</h2>
+
+  <div class="row g-2 align-items-center mt-2 mb-3">
+    <div class="col-12 col-md-6 col-lg-4 ms-auto">
+      <div class="input-group">
+        <span class="input-group-text">
+          <i class="bi bi-search"></i>
+        </span>
+        <input type="text" class="form-control" placeholder="Cerca per nome, cognome, uic o data fine"
+          [(ngModel)]="searchTerm">
+        <button class="btn btn-outline-secondary" type="button" (click)="clearSearch()" [disabled]="!searchTerm.trim()">
+          Pulisci
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th style="cursor: pointer; user-select: none; width: 20%;">
+              Nome
+            </th>
+            <th style="cursor: pointer; user-select: none; width: 20%;">
+              Cognome
+            </th>
+            <th style="width: 15%;">UIC Veicolo</th>
+            <th style="width: 20%;">Data Inizio</th>
+            <th style="width: 15%;">Data Fine</th>
+            <th class="text-end" style="width: 10%;">Costo</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (rental of filteredRentals; track rental.id) {
+          <tr>
+            <td>{{ rental.nome || 'N/D' }}</td>
+            <td>{{ rental.cognome || 'N/D' }}</td>
+            <td><span class="badge bg-secondary">{{ rental.uic || 'N/D' }}</span></td>
+            <td>{{ rental.startDateFormatted }}</td>
+            <td>
+              @if (rental.endDateFormatted) {
+              {{ rental.endDateFormatted }}
+              } @else {
+              <span class="badge bg-warning text-dark">In corso</span>
+              }
+            </td>
+            <td class="text-end fw-bold">
+              @if (rental.totalCost !== null && rental.totalCost > 0) {
+              {{ rental.totalCost | currency:'EUR':'symbol':'1.2-2' }}
+              } @else {
+              <span class="text-muted">-</span>
+              }
+            </td>
+          </tr>
+          } @empty {
+          @if (isLoading) {
+          <tr>
+            <td colspan="6" class="text-center py-4">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Caricamento...</span>
+              </div>
+            </td>
+          </tr>
+          } @else {
+          <tr>
+            <td colspan="6" class="text-center py-4 text-muted">Nessun noleggio registrato.</td>
+          </tr>
+          }
+          }
+        </tbody>
+      </table>
+    </div>
+</div>

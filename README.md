@@ -236,7 +236,7 @@ Il progetto è predisposto per un'infrastruttura enterprise su **Microsoft Azure
 
 1. **Accedi alla cartella del frontend**:
    ```bash
-   cd C:\Users\SpezialeSimone\ITS_J1\GreenMobility-fe
+   cd GreenMobility-fe
    ```
 
 2. **Installa le dipendenze npm**:

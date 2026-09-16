@@ -1,0 +1,10 @@
+import { CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
+
+@Component({
+	selector: 'app-admin-navbar',
+	standalone: true,
+	imports: [CommonModule, RouterLink, RouterLinkActive],
+	templateUrl: './navbar.html',})
+export class AdminNavbarComponent {}

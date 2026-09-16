@@ -1,0 +1,15 @@
+<nav class="navbar">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center gap-2">
+            <img src="favicon.ico" alt="Logo" width="30" height="30" class="d-inline-block align-text-top">
+            GreenMobility
+        </a>
+        @if (showAdminNav) {
+        <app-admin-navbar></app-admin-navbar>
+        }
+        <a href="#" class="d-inline-flex align-items-center gap-2 text-decoration-none text-white" (click)="onLogout()">
+            <span>Esci</span>
+            <i class="bi bi-person-circle"></i>
+        </a>
+    </div>
+</nav>

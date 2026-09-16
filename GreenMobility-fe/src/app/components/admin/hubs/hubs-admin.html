@@ -1,0 +1,174 @@
+<app-header [showAdminNav]="true"></app-header>
+
+<div class="container pt-0 mt-0">
+  @if (!isFormOpen) {
+  <h2 class="mb-1 mt-0" style="line-height: 1;">Gestione Hubs</h2>
+  }
+  @if (errorMessage) {
+  <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+    {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
+  </div>
+  }
+  @if (isFormOpen) {
+  <div class="d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 150px);">
+    <div class="card shadow-sm w-100" style="max-width: 600px;">
+      <div class="card-body p-4">
+        <h3 class="text-center mb-4 fw-bold text-success fs-2">{{ isCreating ? 'Nuovo Hub' : 'Modifica Hub' }}</h3>
+        <div class="row g-3">
+          <div class="col-12">
+            <label for="form-name" class="form-label required-field">Nome</label>
+            <input id="form-name" type="text" class="form-control" [class.is-invalid]="submitted && !formHub.name.trim()"
+              [(ngModel)]="formHub.name" placeholder="Nome hub" />
+            <div class="invalid-feedback">Il nome non può essere vuoto.</div>
+          </div>
+          <div class="col-12">
+            <label for="form-address" class="form-label required-field">Indirizzo</label>
+            <input id="form-address" type="text" class="form-control"
+              [class.is-invalid]="submitted && !formHub.address.trim()" [(ngModel)]="formHub.address"
+              placeholder="Indirizzo" />
+            <div class="invalid-feedback">L'indirizzo non può essere vuoto.</div>
+          </div>
+          <div class="col-md-6">
+            <label for="form-city" class="form-label required-field">Città</label>
+            <input id="form-city" type="text" class="form-control" [class.is-invalid]="submitted && !formHub.city.trim()"
+              [(ngModel)]="formHub.city" placeholder="Città" />
+            <div class="invalid-feedback">La città non può essere vuota.</div>
+          </div>
+          <div class="col-md-6">
+            <label for="form-capacity" class="form-label required-field">Capacità</label>
+            <input id="form-capacity" type="number" class="form-control"
+              [class.is-invalid]="submitted && (formHub.maximumCapacity < 5 || formHub.maximumCapacity > 75)"
+              [(ngModel)]="formHub.maximumCapacity" placeholder="Capacità" min="5" max="75" />
+            <div class="invalid-feedback">La capacità deve essere compresa tra 5 e 75.</div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-center gap-2 mt-4">
+          <button class="btn btn-lg btn-success" (click)="isCreating ? onConfirmAdd() : onConfirmEdit()">
+            <i class="bi bi-check-lg"></i>
+          </button>
+          <button class="btn btn-lg btn-danger" (click)="onCancel()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+  @else {
+  <div class="row g-2 align-items-center mt-4 mb-4">
+    <div class="col-auto">
+      <button class="btn btn-primary" title="Nuovo hub" (click)="ButtonOnAdd()">
+        <i class="bi bi-plus-lg me-1"></i>
+        Nuovo hub
+      </button>
+    </div>
+    <div class="col-12 col-md-6 col-lg-4 ms-md-auto">
+      <div class="input-group">
+        <span class="input-group-text">
+          <i class="bi bi-search"></i>
+        </span>
+        <input type="text" class="form-control" placeholder="Cerca per città o nome" [(ngModel)]="searchTerm">
+        <button class="btn btn-outline-secondary" type="button" (click)="clearSearch()" [disabled]="!searchTerm.trim()">
+          Pulisci
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Nome Hub</th>
+          <th>Indirizzo</th>
+          <th>Città</th>
+          <th class="text-center">Capacità</th>
+          <th class="text-center">Azioni</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (hub of filteredHubs; track hub.id) {
+        <tr>
+          <td>{{ hub.name }}</td>
+          <td>{{ hub.address }}</td>
+          <td>{{ hub.city }}</td>
+          <td class="text-center">{{ hub.maximumCapacity }}</td>
+          <td class="text-center">
+            <div class="d-flex justify-content-center gap-2">
+              <button class="btn btn-primary" title="Modifica" (click)="ButtonOnEdit(hub)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-danger" title="Elimina" (click)="ButtonOnDelete(hub)">
+                <i class="bi bi-trash"></i>
+              </button>
+              <button class="btn btn-warning" title="Manutenzione" (click)="ButtonOnBattery(hub)">
+                <i class="bi bi-battery-charging"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        } @empty {
+        @if (isLoading) {
+        <tr>
+          <td colspan="5" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Caricamento...</span>
+            </div>
+          </td>
+        </tr>
+        } @else {
+        <tr>
+          <td colspan="5" class="text-center py-4 text-muted">Nessun hub trovato.</td>
+        </tr>
+        }
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+</div>
+
+@if (showConfirmModal) {
+<div class="modal-backdrop fade show"></div>
+}
+
+<div class="modal fade" [class.show]="showConfirmModal" [style.display]="showConfirmModal ? 'block' : 'none'"
+  tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Conferma Eliminazione</h5>
+        <button type="button" class="btn-close" (click)="hideConfirmDialog()"></button>
+      </div>
+      <div class="modal-body">
+        Sei sicuro di voler eliminare l'hub <strong>{{ hubNameToDelete }}</strong>?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="hideConfirmDialog()">Annulla</button>
+        <button type="button" class="btn btn-danger" (click)="confirmAndDelete()">Conferma</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (showBatteryModal) {
+<div class="modal-backdrop fade show"></div>
+}
+
+<div class="modal fade" [class.show]="showBatteryModal" [style.display]="showBatteryModal ? 'block' : 'none'"
+  tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Manutenzione Batteria</h5>
+        <button type="button" class="btn-close" (click)="closeBatteryModal()"></button>
+      </div>
+      <div class="modal-body">
+        {{ batteryMessage }}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" (click)="closeBatteryModal()">OK</button>
+      </div>
+    </div>
+  </div>
+</div>

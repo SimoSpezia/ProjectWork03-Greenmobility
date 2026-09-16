@@ -1,0 +1,16 @@
+.battery-badge-success {
+    background-color: rgba(73, 204, 148, 0.15);
+    color: var(--highlight);
+    border: 1px solid var(--highlight);
+}
+.battery-badge-warning {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+    border: 1px solid var(--warning);
+}
+.battery-badge-danger {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    font-weight: bold;
+}

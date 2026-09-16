@@ -1,0 +1,97 @@
+<app-header></app-header>
+
+<div class="container py-4">
+    <div class="d-flex align-items-stretch gap-3 mb-4">
+        <div class="flex-grow-1 d-flex flex-column justify-content-center">
+            <h2 class="mb-1">Seleziona un veicolo</h2>
+            @if (hub) {
+            <p class="text-muted mb-0 small">{{ hub.address }}, {{ hub.city }}</p>
+            }
+        </div>
+        <button class="btn px-4 d-flex align-items-center justify-content-center" style="background-color: var(--highlight); border-color: var(--highlight); color: #03214A;" type="button" (click)="goToHubs()" title="Torna agli hub">
+            <i class="bi bi-arrow-left fs-4"></i>
+        </button>
+    </div>
+
+    <div class="row g-2 mb-4">
+        <div class="col-6">
+            <button [ngClass]="getButtonClass(1)" class="w-100 py-3 fw-bold d-flex flex-row align-items-center justify-content-center gap-2" type="button" (click)="selectVehicleType(1)">
+                <i class="bi bi-bicycle fs-5"></i>
+                <span>E-Bike</span>
+            </button>
+        </div>
+        <div class="col-6">
+            <button [ngClass]="getButtonClass(2)" class="w-100 py-3 fw-bold d-flex flex-row align-items-center justify-content-center gap-2" type="button" (click)="selectVehicleType(2)">
+                <i class="bi bi-scooter fs-5"></i>
+                <span>Monopattino</span>
+            </button>
+        </div>
+    </div>
+
+    @if (isLoading) {
+    <div class="alert alert-info">Caricamento veicoli...</div>
+    }
+
+    @if (!isLoading && errorMessage) {
+    <div class="alert alert-danger">{{ errorMessage }}</div>
+    }
+
+    @if (!isLoading && !errorMessage && vehicles.length === 0) {
+    <div class="alert alert-warning">Nessun veicolo disponibile in questo hub.</div>
+    }
+
+    <div class="row g-3">
+        @for (vehicle of filteredVehicles; track trackByVehicleId($index, vehicle)) {
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex flex-column mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0 text-muted">
+                                <i class="bi" [ngClass]="getVehicleIcon(vehicle.vehicleTypeId)"></i>
+                                {{ vehicle.vehicleTypeName }}
+                            </h6>
+                            <app-battery-indicator [level]="vehicle.batteryLevel"></app-battery-indicator>
+                        </div>
+                        <div>
+                            <h4 class="mb-0 fw-normal fs-5">Codice Veicolo: <strong class="fw-bold">{{ vehicle.uic }}</strong></h4>
+                        </div>
+                    </div>
+                    <div class="mt-auto d-flex justify-content-between align-items-center pt-2">
+                        <div class="text-secondary fw-semibold">
+                            {{ vehicle.vehicleStatusName }}
+                        </div>
+                        <span class="fs-5 text-cta fw-bold" role="button" (click)="confirmRental(vehicle)" style="cursor: pointer;">
+                            Avvia noleggio <i class="bi bi-arrow-right ms-1"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        }
+    </div>
+</div>
+
+@if (showConfirmModal) {
+<div class="modal-backdrop fade show"></div>
+}
+
+<div class="modal fade" [class.show]="showConfirmModal" 
+     [style.display]="showConfirmModal ? 'block' : 'none'" 
+     tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Conferma noleggio</h5>
+        <button type="button" class="btn-close" (click)="hideConfirmDialog()"></button>
+      </div>
+      <div class="modal-body">
+        Avviare il noleggio del veicolo <strong>{{ selectedVehicle?.uic }}</strong>?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="hideConfirmDialog()">Annulla</button>
+        <button type="button" class="btn btn-primary" (click)="confirmAndStartRental()">Conferma</button>
+      </div>
+    </div>
+  </div>
+</div>

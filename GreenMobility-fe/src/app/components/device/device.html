@@ -1,0 +1,188 @@
+<div class="device-container d-flex flex-column h-100 bg-light">
+    @if (step === 'home') {
+    <div class="flex-grow-1 d-flex flex-column justify-content-center align-items-center p-4">
+        <div class="text-center mb-5">
+            <h1 class="display-2 fw-bolder text-success mb-3 tracking-wide">GreenMobility</h1>
+            <p class="text-muted fs-4">La tua soluzione ecologica per la città.</p>
+        </div>
+        <button
+            class="btn btn-success py-4 px-5 fw-bold rounded-pill shadow-lg fs-2 text-uppercase tracking-wide d-flex justify-content-center align-items-center w-100"
+            style="max-width: 350px;" (click)="step = 'code'">
+            Avvia <i class="bi bi-play-circle-fill ms-3"></i>
+        </button>
+    </div>
+    } @else if (step === 'code') {
+    <div class="flex-grow-1 d-flex flex-column p-3 p-md-4 overflow-auto">
+        
+        <div class="text-center mt-2 mt-md-4">
+            <h1 class="display-5 display-md-4 fw-bolder text-success mb-2">GreenMobility</h1>
+            <h3 class="fw-bold mt-2 mt-md-4">Sblocca Veicolo</h3>
+            
+            <div class="d-flex align-items-center justify-content-center mt-3">
+                <div class="badge border rounded-pill px-3 py-2 d-inline-flex align-items-center shadow-sm" [ngClass]="{
+                         'bg-success-subtle text-success border-success-subtle': batteryLevel >= 80,
+                         'bg-warning-subtle text-warning-emphasis border-warning-subtle': batteryLevel >= 40 && batteryLevel < 80,
+                         'bg-danger-subtle text-danger border-danger-subtle': batteryLevel < 40
+                     }">
+                    <i class="bi me-2 fs-5" [ngClass]="{
+                        'bi-battery-full text-success': batteryLevel >= 80,
+                        'bi-battery-half text-warning': batteryLevel >= 40 && batteryLevel < 80,
+                        'bi-battery text-danger': batteryLevel < 40
+                    }"></i>
+                    <span class="fw-bold fs-6">Batteria Veicolo: {{ batteryLevel }}%</span>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
+            <div class="w-100" style="max-width: 400px;">
+                <div class="form-group">
+                    <input type="tel"
+                        class="form-control form-control-lg text-center fw-bold fs-1 tracking-widest py-4 shadow-sm"
+                        placeholder="000000" maxlength="6" [ngModel]="deviceCode" (input)="onCodeInput($event)"
+                        [disabled]="isVerifying" />
+                    @if (verifyError) {
+                    <div class="text-danger mt-3 text-center fw-medium">{{ verifyError }}</div>
+                    }
+                </div>
+                <button
+                    class="btn btn-success btn-lg w-100 py-3 mt-4 fw-bold rounded-pill text-uppercase tracking-wide d-flex justify-content-center align-items-center"
+                    (click)="submitCode()" [disabled]="deviceCode.length < 6 || isVerifying">
+                    @if (isVerifying) {
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Verifica in corso...
+                    } @else {
+                    Sblocca <i class="bi bi-unlock-fill ms-2 fs-5"></i>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+    } @else if (step === 'timer') {
+    
+    <div class="flex-grow-1 d-flex flex-column p-4 justify-content-between overflow-y-auto">
+
+        
+        <div class="text-center mt-4">
+            
+            <div class="mt-4 py-2">
+                @if (isTimerRunning) {
+                <span class="text-success fw-bolder fs-2 d-block text-uppercase">Corsa in corso</span>
+                <span class="text-muted fs-6">Guida con prudenza!</span>
+                } @else if (isWaitingToStart) {
+                <span class="text-warning fw-bolder fs-2 d-block text-uppercase">Preparazione</span>
+                <div class="mt-3">
+                    <span class="text-muted fs-4 d-block mb-1">La corsa inizierà tra...</span>
+                    <span class="display-1 fw-bolder text-dark">{{ startCountdown }}</span>
+                </div>
+                } @else {
+                <span class="text-danger fw-bolder fs-2 d-block text-uppercase">Corsa terminata</span>
+                }
+            </div>
+        </div>
+
+        
+        <div class="d-flex flex-column justify-content-center align-items-center my-auto">
+            <div class="timer-display shadow-sm w-100" [class.running]="isTimerRunning">
+                <span class="font-monospace fw-bold">{{ formattedTimer }}</span>
+            </div>
+        </div>
+
+    </div>
+
+    
+    <div class="p-3 bg-white border-top shadow-sm pb-safe w-100">
+        <button
+            class="btn btn-danger btn-lg w-100 py-4 fw-bold rounded-4 fs-4 text-uppercase tracking-wide d-flex justify-content-center align-items-center border-0"
+            (click)="terminateRide()" [disabled]="!isTimerRunning && !isWaitingToStart">
+            <i class="bi bi-stop-circle-fill me-3 fs-3"></i> Termina corsa
+        </button>
+    </div>
+    } @else if (step === 'report') {
+    
+    <div class="flex-grow-1 d-flex flex-column p-4 justify-content-between overflow-y-auto">
+        
+        <div class="text-center mt-4">
+            <h1 class="display-3 fw-bolder text-success mb-2">Riepilogo Corsa</h1>
+            <p class="text-muted fs-5">Corsa terminata con successo. Grazie per aver viaggiato con noi!</p>
+        </div>
+
+        
+        <div class="card border-0 shadow rounded-4 p-4 my-auto bg-white mx-auto w-100" style="max-width: 500px;">
+            
+            <div class="row g-3 text-center">
+                
+                <div class="col-6">
+                    <div class="p-3 bg-light rounded-3 d-flex align-items-center justify-content-center gap-2 flex-wrap">
+                        <span class="text-muted fs-6 mb-0">
+                            <i class="bi bi-clock-fill text-success me-1"></i> Partenza:
+                        </span>
+                        <strong class="fs-4 text-dark fw-bold">{{ formatTime(startTime) }}</strong>
+                    </div>
+                </div>
+                
+                <div class="col-6">
+                    <div class="p-3 bg-light rounded-3 d-flex align-items-center justify-content-center gap-2 flex-wrap">
+                        <span class="text-muted fs-6 mb-0">
+                            <i class="bi bi-clock-fill text-danger me-1"></i> Fine:
+                        </span>
+                        <strong class="fs-4 text-dark fw-bold">{{ formatTime(endTime) }}</strong>
+                    </div>
+                </div>
+                
+                <div class="col-12">
+                    <div class="p-3 rounded-3 border border-success"
+                        style="background-color: rgba(33, 163, 105, 0.12);">
+                        <div class="text-secondary fs-6 mb-1">Costo Totale</div>
+                        <div class="fs-2 fw-bold mb-1" style="color: #21A369 !important;">{{ backendCost |
+                            currency:'EUR':'symbol':'1.2-2' }}</div>
+                        <div class="text-secondary small">Tempo fatturato: {{ backendDuration }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="text-center mb-4">
+            <p class="text-muted mb-2">Ritorno alla schermata di sblocco tra...</p>
+            <div class="countdown-circle mx-auto d-flex align-items-center justify-content-center">
+                <span class="fs-2 fw-bold text-success font-monospace">{{ reportCountdown }}</span>
+            </div>
+            <button class="btn btn-outline-secondary btn-lg mt-4 rounded-pill px-5 py-2 fw-semibold" (click)="resetToStart()">
+                Torna Subito
+            </button>
+        </div>
+    </div>
+    } @else if (step === 'operator') {
+    <div class="flex-grow-1 d-flex flex-column p-4 overflow-y-auto">
+        <div class="text-center mt-4">
+            <h1 class="display-4 fw-bolder text-success mb-2">API Key</h1>
+            <p class="text-muted mt-3">Inserisci la chiave API del veicolo</p>
+        </div>
+        <div class="flex-grow-1 d-flex flex-column justify-content-center align-items-center">
+            <div class="w-100" style="max-width: 400px;">
+                <div class="form-group">
+                    <textarea
+                        class="form-control form-control-lg text-center fw-bold fs-6 tracking-widest py-3 shadow-sm"
+                        placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX" [(ngModel)]="operatorApiKey" rows="2"
+                        maxlength="36" style="resize: none;"></textarea>
+                    @if (operatorError) {
+                    <div class="text-danger mt-3 text-center fw-medium">{{ operatorError }}</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="p-3 bg-white border-top shadow-sm pb-safe">
+        <button class="btn btn-success btn-lg w-100 py-3 fw-bold rounded-pill text-uppercase mb-3"
+            (click)="saveOperatorKey()">
+            Conferma
+        </button>
+        <button class="btn btn-outline-secondary btn-lg w-100 py-3 fw-bold rounded-pill text-uppercase"
+            (click)="cancelOperator()">
+            Annulla
+        </button>
+    </div>
+    }
+</div>

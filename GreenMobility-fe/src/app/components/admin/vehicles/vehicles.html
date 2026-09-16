@@ -1,0 +1,240 @@
+<app-header [showAdminNav]="true"></app-header>
+
+<div class="container pt-0 mt-0">
+    @if (!isFormOpen) {
+    <h2 class="mb-1 mt-0" style="line-height: 1;">Gestione Veicoli</h2>
+    }
+
+    @if (successMessage) {
+    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+        {{ successMessage }}
+        <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+    </div>
+    }
+
+    @if (errorMessage) {
+    <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+        {{ errorMessage }}
+        <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
+    </div>
+    }
+
+    @if (createdApiKey) {
+    <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+        <strong>API Key del veicolo creato:</strong> {{ createdApiKey }}
+        <br>
+        <small class="text-muted">Salvala subito, non sarà più visibile.</small>
+        <button type="button" class="btn-close" (click)="createdApiKey = ''"></button>
+    </div>
+    }
+
+    @if (hubError) {
+    <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+        {{ hubError }}
+        <button type="button" class="btn-close" (click)="hubError = ''"></button>
+    </div>
+    }
+
+    @if (typesError) {
+    <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+        {{ typesError }}
+        <button type="button" class="btn-close" (click)="typesError = ''"></button>
+    </div>
+    }
+
+    @if (statusesError) {
+    <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+        {{ statusesError }}
+        <button type="button" class="btn-close" (click)="statusesError = ''"></button>
+    </div>
+    }
+
+    @if (isFormOpen) {
+    <div class="d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 150px);">
+        <div class="card shadow-sm w-100" style="max-width: 600px;">
+            <div class="card-body p-4">
+                <h3 class="text-center mb-4 fw-bold text-success fs-2">{{ isCreating ? 'Nuovo Veicolo' : 'Modifica Veicolo' }}</h3>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="form-vehicle-type" class="form-label" [class.required-field]="isCreating">Tipo veicolo</label>
+                        @if (isCreating) {
+                        <select id="form-vehicle-type" class="form-select"
+                            [class.is-invalid]="submitted && createVehicleTypeId < 1"
+                            [(ngModel)]="createVehicleTypeId">
+                            @for (type of vehicleTypes; track type.vehicleTypeId) {
+                            <option [ngValue]="type.vehicleTypeId">{{ type.type }}</option>
+                            }
+                        </select>
+                        <div class="invalid-feedback">Seleziona un tipo di veicolo.</div>
+                        } @else {
+                        <select id="form-vehicle-type" class="form-select" [(ngModel)]="editVehicleTypeId" disabled>
+                            @for (type of vehicleTypes; track type.vehicleTypeId) {
+                            <option [ngValue]="type.vehicleTypeId">{{ type.type }}</option>
+                            }
+                        </select>
+                        }
+                    </div>
+
+                    <div class="col-12">
+                        <label for="form-hub" class="form-label required-field">Hub di appartenenza</label>
+                        @if (isLoadingHubs) {
+                        <div class="alert alert-info">Caricamento hub...</div>
+                        }
+                        @if (isCreating) {
+                        <select id="form-hub" class="form-select"
+                            [class.is-invalid]="submitted && (createHubId < 1 || isSelectedCreateHubFull())"
+                            [(ngModel)]="createHubId">
+                            @for (hub of hubs; track hub.id) {
+                            <option [ngValue]="hub.id" [disabled]="isHubFull(hub)">
+                                {{ hub.name }} @if (isHubFull(hub)) { (pieno) }
+                            </option>
+                            }
+                        </select>
+                        <div class="invalid-feedback">Seleziona un hub con posti disponibili.</div>
+                        } @else {
+                        <select id="form-hub" class="form-select"
+                            [class.is-invalid]="submitted && (editHubId === null || editHubId < 1)"
+                            [(ngModel)]="editHubId">
+                            @for (hub of hubs; track hub.id) {
+                            <option [ngValue]="hub.id" [disabled]="isHubFull(hub) && hub.id !== editHubId">
+                                {{ hub.name }} @if (isHubFull(hub) && hub.id !== editHubId) { (pieno) }
+                            </option>
+                            }
+                        </select>
+                        <div class="invalid-feedback">Seleziona un hub valido.</div>
+                        }
+                    </div>
+
+                    @if (!isCreating) {
+                    <div class="col-12">
+                        <label for="form-status" class="form-label required-field">Stato</label>
+                        <select id="form-status" class="form-select"
+                            [class.is-invalid]="submitted && editVehicleStatusId === null"
+                            [(ngModel)]="editVehicleStatusId">
+                            @for (status of vehicleStatuses; track status.vehicleStatusId) {
+                            <option [ngValue]="status.vehicleStatusId">{{ status.status }}</option>
+                            }
+                        </select>
+                        <div class="invalid-feedback">Seleziona uno stato valido.</div>
+                    </div>
+
+                    <div class="col-12">
+                        <label for="form-battery" class="form-label">Batteria</label>
+                        <input id="form-battery" type="number" class="form-control"
+                            [class.is-invalid]="submitted && editBatteryLevel !== null && (editBatteryLevel < 0 || editBatteryLevel > 100)"
+                            [(ngModel)]="editBatteryLevel" min="0" max="100">
+                        <div class="invalid-feedback">La batteria deve essere compresa tra 0 e 100.</div>
+                    </div>
+                    }
+                </div>
+
+                <div class="d-flex justify-content-center gap-2 mt-4">
+                    <button class="btn btn-lg btn-success" (click)="isCreating ? onConfirmAdd() : onConfirmEdit()">
+                        <i class="bi bi-check-lg"></i>
+                    </button>
+                    <button class="btn btn-lg btn-danger" (click)="onCancel()">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+    @else {
+    <div class="row g-2 align-items-center mt-4 mb-4">
+        <div class="col-auto">
+            <button class="btn btn-primary" title="Nuovo veicolo" (click)="ButtonOnAdd()">
+                <i class="bi bi-plus-lg me-1"></i>
+                Nuovo Veicolo
+            </button>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4 ms-md-auto">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control" placeholder="Cerca per UIC, stato o hub"
+                    [(ngModel)]="searchTerm">
+                <button class="btn btn-outline-secondary" type="button" (click)="clearSearch()"
+                    [disabled]="!searchTerm.trim()">
+                    Pulisci
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>UIC</th>
+                    <th>Tipo</th>
+                    <th>Stato</th>
+                    <th>Hub</th>
+                    <th>Batteria</th>
+                    <th class="text-center" style="width: 140px;">Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (v of filteredVehicles; track v.vehicleId) {
+                <tr>
+                    <td>{{ v.uic }}</td>
+                    <td>{{ v.vehicleTypeName }}</td>
+                    <td>{{ v.vehicleStatusName }}</td>
+                    <td>{{ v.hubName || 'Nessun hub' }}</td>
+                    <td>
+                        <app-battery-indicator [level]="v.batteryLevel"></app-battery-indicator>
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-primary" title="Modifica" (click)="ButtonOnEdit(v)">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-danger" title="Sospendi" (click)="softDelete(v.vehicleId)">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                } @empty {
+                    @if (isLoading) {
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Caricamento...</span>
+                            </div>
+                        </td>
+                    </tr>
+                    } @else {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">Nessun veicolo trovato.</td>
+                    </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+</div>
+
+@if (showConfirmModal) {
+<div class="modal-backdrop fade show"></div>
+}
+
+<div class="modal fade" [class.show]="showConfirmModal" [style.display]="showConfirmModal ? 'block' : 'none'"
+    tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Conferma Sospensione</h5>
+                <button type="button" class="btn-close" (click)="hideConfirmDialog()"></button>
+            </div>
+            <div class="modal-body">
+                Sei sicuro di voler sospendere il veicolo <strong>{{ vehicleUicToDelete }}</strong>?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="hideConfirmDialog()">Annulla</button>
+                <button type="button" class="btn btn-danger" (click)="confirmAndDelete()">Conferma</button>
+            </div>
+        </div>
+    </div>
+</div>

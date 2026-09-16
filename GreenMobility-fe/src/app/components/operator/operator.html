@@ -1,0 +1,129 @@
+<app-header></app-header>
+
+<div class="container mt-4">
+    @if (!isFormOpen) {
+        <h2 class="mb-2">Manutenzione Veicoli</h2>
+        <br>
+    }
+
+    @if (successMessage) {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ successMessage }}
+            <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+        </div>
+    }
+
+    @if (errorMessage) {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ errorMessage }}
+            <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+        </div>
+    }
+
+    @if (isFormOpen) {
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8 col-lg-4">
+                
+
+                @if (editingVehicle) {
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="text-center mb-4 fw-bold text-success fs-2">Manutenzione Veicolo</h2>
+                        <br>
+                        <div class="mb-3">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <div class="text-muted small">UIC</div>
+                                    <div class="fw-semibold">{{ editingVehicle.uic }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-muted small">Tipo</div>
+                                    <div class="fw-semibold">
+                                        {{ editingVehicle.vehicleTypeName || getTypeLabel(editingVehicle.vehicleTypeId) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="text-muted small">Hub</div>
+                            <div class="fw-semibold">{{ editingVehicle.hubName || editingVehicle.hubId }}</div>
+                        </div>
+
+                        <form (ngSubmit)="onConfirmEdit()">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label required-field">Stato</label>
+                                    <select class="form-select"
+                                        [class.is-invalid]="submitted && editVehicleStatusId === null"
+                                        [(ngModel)]="editVehicleStatusId" name="vehicleStatusId" required>
+                                        @for (status of vehicleStatuses; track status.id) {
+                                        <option [ngValue]="status.id">{{ status.label }}</option>
+                                        }
+                                    </select>
+                                    <div class="invalid-feedback">Seleziona uno stato valido.</div>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label required-field">Batteria</label>
+                                    <input type="number" class="form-control"
+                                        [class.is-invalid]="submitted && (editBatteryLevel === null || editBatteryLevel < 0 || editBatteryLevel > 100)"
+                                        [(ngModel)]="editBatteryLevel" name="batteryLevel" min="0" max="100" required>
+                                    <div class="invalid-feedback">La batteria deve essere compresa tra 0 e 100.</div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-center gap-2 mt-4">
+                                <button type="submit" class="btn btn-lg btn-success" title="Salva">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                                <button type="button" class="btn btn-lg btn-danger" title="Annulla" (click)="onCancel()">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+    }
+    @else {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>UIC</th>
+                        <th>Tipo</th>
+                        <th>Stato</th>
+                        <th>Hub</th>
+                        <th>Batteria</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (vehicle of vehicles; track vehicle.vehicleId) {
+                        <tr>
+                            <td>{{ vehicle.uic }}</td>
+                            <td>{{ vehicle.vehicleTypeName || getTypeLabel(vehicle.vehicleTypeId) }}</td>
+                            <td>{{ vehicle.vehicleStatusName || getStatusLabel(vehicle.vehicleStatusId) }}</td>
+                            <td>{{ vehicle.hubName || vehicle.hubId }}</td>
+                            <td>
+                                <app-battery-indicator [level]="vehicle.batteryLevel"></app-battery-indicator>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary me-1" (click)="ButtonOnEdit(vehicle)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (vehicles.length === 0) {
+            <p class="text-muted">Nessun veicolo in manutenzione o con batteria scarica da gestire.</p>
+        }
+    }
+</div>

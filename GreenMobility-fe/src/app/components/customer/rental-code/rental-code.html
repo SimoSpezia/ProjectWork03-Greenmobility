@@ -1,0 +1,59 @@
+<div class="container py-5 d-flex align-items-start justify-content-center pt-5" style="min-height: 85vh;">
+    @if (rentalResponse) {
+    <div class="text-center mt-5 w-100">
+        <h1 class="mb-5 display-4 fw-bolder text-success">Noleggio confermato!</h1>
+
+        <div class="card p-5 mb-4 shadow-sm border-0" style="background-color: var(--bg-card);">
+            @if (rentalResponse.uic) {
+            <h3 class="mb-4 fw-bold">Codice Veicolo: <span class="text-highlight">{{ rentalResponse.uic }}</span></h3>
+            }
+            <p class="text-muted fs-5 mb-3">Usa questo codice sul dispositivo del veicolo per sbloccarlo:</p>
+            <h2 class="font-monospace fw-bold mb-0 text-cta" style="font-size: 3.5rem; letter-spacing: 4px;">
+                {{ rentalResponse.codice }}
+            </h2>
+        </div>
+
+        <p class="text-muted fs-5 mb-5">
+            Una volta inserito il codice, la corsa avrà inizio.
+        </p>
+
+        <button class="btn btn-primary" type="button" (click)="confirmGoToHubs()">
+            <i class="bi bi-geo-alt-fill"></i> Torna agli hub
+        </button>
+    </div>
+      } @else {
+      <div class="text-center">
+        <h1 class="mb-3">Codice non disponibile</h1>
+        <p class="text-muted mb-4">Non c'e un noleggio attivo o il codice non e piu disponibile.</p>
+        <button class="btn btn-primary" type="button" (click)="goToHubs()">
+          <i class="bi bi-geo-alt-fill"></i> Torna agli hub
+        </button>
+      </div>
+    }
+</div>
+
+@if (showConfirmModal) {
+<div class="modal-backdrop fade show"></div>
+}
+
+<div class="modal fade" [class.show]="showConfirmModal" 
+     [style.display]="showConfirmModal ? 'block' : 'none'" 
+     tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Attenzione</h5>
+        <button type="button" class="btn-close" (click)="hideConfirmDialog()"></button>
+      </div>
+      <div class="modal-body">
+        Tornare alla pagina principale?
+        <br>
+        <small class="text-muted">Ricordati di annotare il codice di noleggio.</small>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="hideConfirmDialog()">Annulla</button>
+        <button type="button" class="btn btn-primary" (click)="goToHubs()">Conferma</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,83 @@
+<div class="container-fluid min-vh-100">
+  <div class="row justify-content-center align-items-start min-vh-100 mt-5">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
+      <div class="card">
+        <div class="card-body p-4">
+          <h2 class="text-center mb-3">GreenMobility</h2>
+          <p class="text-center text-secondary">Benvenuto, accedi al tuo account per usufruire dei nostri servizi di
+            mobilità</p>
+          @if (backendErrors.length > 0) {
+          <div class="alert alert-danger d-flex align-items-center border-0 small py-2" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2 fs-6"></i>
+            <div>
+              <ul class="mb-0 ps-3">
+                @for (err of backendErrors; track err) {
+                <li>{{ err }}</li>
+                }
+              </ul>
+            </div>
+          </div>
+          }
+          <form #loginForm="ngForm" (ngSubmit)="login(loginForm)" novalidate>
+            
+            <div class="mb-3 text-start">
+              <label for="email" class="form-label small fw-semibold text-secondary required-field">Indirizzo Email</label>
+
+              <div class="input-group">
+                <span class="input-group-text border-end-0">
+                  <i class="bi bi-envelope"></i>
+                </span>
+
+                <input type="email" id="email" [(ngModel)]="email" name="email" class="form-control border-start-0"
+                  required email #emailCtrl="ngModel" [disabled]="isLoading" placeholder="mario.rossi@mail.it" />
+              </div>
+
+              @if(emailCtrl.invalid && (emailCtrl.touched || emailCtrl.dirty)) {
+              @if(emailCtrl.errors?.['required']) {
+              <div class="alert alert-danger small py-1 mt-1">Indirizzo Email obbligatorio</div>
+              }
+              @if(emailCtrl.errors?.['email']) {
+              <div class="alert alert-danger small py-1 mt-1">Formato email non valido</div>
+              }
+              }
+            </div>
+
+            
+            <div class="mb-3 text-start">
+              <label for="password" class="form-label small fw-semibold text-secondary required-field">Password</label>
+
+              <div class="input-group">
+                <span class="input-group-text border-end-0">
+                  <i class="bi bi-lock"></i>
+                </span>
+
+                <input type="password" id="password" [(ngModel)]="password" name="password"
+                  class="form-control border-start-0" required minlength="8" maxlength="24" #passwordCtrl="ngModel"
+                  [disabled]="isLoading" placeholder="Password" />
+              </div>
+
+              @if(passwordCtrl.invalid && (passwordCtrl.touched || passwordCtrl.dirty)) {
+              @if(passwordCtrl.errors?.['required']) {
+              <div class="alert alert-danger small py-1 mt-1">Password obbligatoria</div>
+              }
+              }
+            </div>
+
+            <button type="submit" class="btn btn-success w-100 py-2 fw-bold"
+              [disabled]="isLoading || loginForm.invalid">
+              <span>Accedi</span>
+              
+            </button>
+          </form>
+          <div class="text-center mb-3">
+            <p class="mt-3 mb-2 small text-secondary">Non sei registrato?</p>
+            <button type="button" class="btn btn-outline-success btn-sm w-100 py-1 fw-semibold"
+              (click)="navigateToRegister()">
+              Crea il tuo account
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
