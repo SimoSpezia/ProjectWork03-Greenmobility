@@ -12,7 +12,6 @@
 
 ## 📌 Indice dei Contenuti
 - [Panoramica del Progetto](#-panoramica-del-progetto)
-- [Architettura del Sistema](#-architettura-del-sistema)
 - [Backend (.NET 10 Web API)](#-backend-greenmobility-be)
   - [Caratteristiche & Architettura](#caratteristiche--architettura)
   - [Modello Dati & Database](#modello-dati--database)
@@ -41,52 +40,6 @@ La piattaforma integra:
 2. **Un'applicazione web Angular 21 (SPA)** con interfaccia reattiva e flussi dedicati per **Clienti**, **Operatori di manutenzione** e **Amministratori**.
 3. **Un simulatore del dispositivo di bordo (IoT)** in grado di interagire con le API fisiche del veicolo (autenticazione tramite API Key hardware, lettura livello batteria tramite Web Battery API, cronometro corsa e calcolo costi in tempo reale).
 4. **Pipeline di CI/CD e deployment su Azure** (App Services, Key Vault con Managed Identity, Azure SQL).
-
----
-
-## 🏗 Architettura del Sistema
-
-```mermaid
-flowchart TD
-    subgraph ClientLayer ["Client Layer (Angular 21)"]
-        Customer["👤 Cliente (Web Portal)"]
-        Operator["🔧 Operatore (Dashboard Manutenzione)"]
-        Admin["👑 Amministratore (Console Gestione)"]
-        IoTDevice["📟 Simulatore Dispositivo IoT"]
-    end
-
-    subgraph ApiLayer ["Backend API Layer (.NET 10 Web API)"]
-        Gateway["REST Controllers e Middleware JWT"]
-        AuthCtrl["AuthController (Identity)"]
-        HubCtrl["HubController"]
-        VehCtrl["VehicleController"]
-        RentCtrl["RentalController (Booking e Telemetria)"]
-    end
-
-    subgraph CloudAndData ["Data e Cloud Layer (Microsoft Azure)"]
-        SQLDB[("🗄️ Azure SQL Database / SQL Server")]
-        KeyVault["🔐 Azure Key Vault (Secrets e Managed Identity)"]
-        DevOps["🚀 Azure DevOps CI/CD Pipelines"]
-    end
-
-    Customer -->|"Prenotazione ed Esplorazione Hub"| Gateway
-    Operator -->|"Interventi e Ricarica Batteria"| Gateway
-    Admin -->|"Gestione Flotta, Hub e Utenti"| Gateway
-    IoTDevice -->|"Sblocco OTP e Telemetria con ApiKey"| Gateway
-
-    Gateway --> AuthCtrl
-    Gateway --> HubCtrl
-    Gateway --> VehCtrl
-    Gateway --> RentCtrl
-
-    AuthCtrl -->|"EF Core 10"| SQLDB
-    HubCtrl -->|"EF Core 10"| SQLDB
-    VehCtrl -->|"EF Core 10"| SQLDB
-    RentCtrl -->|"EF Core 10"| SQLDB
-
-    Gateway -.->|"Lettura Configurazioni"| KeyVault
-    DevOps -.->|"Deploy Automatico"| Gateway
-```
 
 ---
 
@@ -309,8 +262,3 @@ Il progetto è predisposto per un'infrastruttura enterprise su **Microsoft Azure
 | **Operator** | `/operator/maintenance` | Monitoraggio batterie scariche, cambio stato mezzi. |
 | **Admin** | `/admin/vehicles`, `/admin/hubs`, `/admin/users`, `/admin/rentals` | Gestione totale della flotta, creazione stazioni, report noleggi. |
 | **IoT Device** | `/vehicledevice` (o con `/:apikey`) | Interfaccia fisica del veicolo: inserimento codice sblocco, timer corsa. |
-
----
-
-## 📄 Licenza
-Progetto realizzato nell'ambito del percorso formativo ITS - GreenMobility Project Work.
