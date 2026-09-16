@@ -52,32 +52,40 @@ flowchart TD
         Customer["👤 Cliente (Web Portal)"]
         Operator["🔧 Operatore (Dashboard Manutenzione)"]
         Admin["👑 Amministratore (Console Gestione)"]
-        IoTDevice["📟 Simulatore Dispositivo IoT (On-Vehicle Unit)"]
+        IoTDevice["📟 Simulatore Dispositivo IoT"]
     end
 
     subgraph ApiLayer ["Backend API Layer (.NET 10 Web API)"]
-        Gateway["REST Controllers & JWT Middleware"]
+        Gateway["REST Controllers e Middleware JWT"]
         AuthCtrl["AuthController (Identity)"]
         HubCtrl["HubController"]
         VehCtrl["VehicleController"]
-        RentCtrl["RentalController (Booking & Telemetry)"]
+        RentCtrl["RentalController (Booking e Telemetria)"]
     end
 
-    subgraph CloudAndData ["Data & Cloud Layer (Microsoft Azure)"]
+    subgraph CloudAndData ["Data e Cloud Layer (Microsoft Azure)"]
         SQLDB[("🗄️ Azure SQL Database / SQL Server")]
-        KeyVault["🔐 Azure Key Vault (Secrets & Managed Identity)"]
+        KeyVault["🔐 Azure Key Vault (Secrets e Managed Identity)"]
         DevOps["🚀 Azure DevOps CI/CD Pipelines"]
     end
 
-    Customer -->|Prenotazione & Esplorazione Hub| Gateway
-    Operator -->|Interventi & Ricarica Batteria| Gateway
-    Admin -->|CRUD Flotta, Hub, Utenti| Gateway
-    IoTDevice -->|Sblocco OTP & Invio Telemetria (ApiKey Header)| Gateway
+    Customer -->|"Prenotazione ed Esplorazione Hub"| Gateway
+    Operator -->|"Interventi e Ricarica Batteria"| Gateway
+    Admin -->|"Gestione Flotta, Hub e Utenti"| Gateway
+    IoTDevice -->|"Sblocco OTP e Telemetria con ApiKey"| Gateway
 
-    Gateway --> AuthCtrl & HubCtrl & VehCtrl & RentCtrl
-    AuthCtrl & HubCtrl & VehCtrl & RentCtrl -->|EF Core 10| SQLDB
-    Gateway -.->|Lettura Chiavi & Stringhe| KeyVault
-    DevOps -.->|Deploy automatico| Gateway
+    Gateway --> AuthCtrl
+    Gateway --> HubCtrl
+    Gateway --> VehCtrl
+    Gateway --> RentCtrl
+
+    AuthCtrl -->|"EF Core 10"| SQLDB
+    HubCtrl -->|"EF Core 10"| SQLDB
+    VehCtrl -->|"EF Core 10"| SQLDB
+    RentCtrl -->|"EF Core 10"| SQLDB
+
+    Gateway -.->|"Lettura Configurazioni"| KeyVault
+    DevOps -.->|"Deploy Automatico"| Gateway
 ```
 
 ---
