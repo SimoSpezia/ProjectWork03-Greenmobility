@@ -34,6 +34,7 @@
 ## 📖 Panoramica del Progetto
 
 **GreenMobility** è una soluzione completa per la mobilità urbana condivisa ed ecologica. Il sistema permette agli utenti di individuare hub territoriali, verificare la disponibilità di mezzi ecologici (**biciclette a pedalata assistita / E-Bike** e **monopattini elettrici**), prenotare un veicolo e sbloccarlo direttamente tramite codice OTP sul dispositivo di bordo.
+Progetto svolto in ambito scolastico in un gruppo di 3 persone.
 
 La piattaforma integra:
 1. **Un'API RESTful scalabile in .NET 10** con gestione del database tramite Entity Framework Core, autenticazione JWT e integrazione Azure Key Vault.
